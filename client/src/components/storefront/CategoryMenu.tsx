@@ -89,24 +89,24 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
       <div className="bg-white flex overflow-hidden h-full sm:rounded-2xl" style={{ maxHeight: "75vh" }}>
         {/* Left panel — categories from DB */}
         <div
-          className="w-44 sm:w-56 flex-shrink-0 bg-slate-50 border-r border-slate-100 overflow-y-auto"
+          className="w-[52%] min-w-[160px] sm:w-56 flex-shrink-0 bg-slate-50 border-r border-slate-100 overflow-y-auto"
           style={{ maxHeight: "75vh" }}
         >
           {/* Virtual "All" entry */}
           <button
             onClick={() => handleCategoryClick("All")}
             onMouseEnter={() => setActiveCategory("All")}
-            className={`w-full flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3 sm:py-3.5 text-left transition-colors border-b border-slate-100/60 ${
+            className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3.5 sm:py-3.5 text-left transition-colors border-b border-slate-100/60 ${
               activeCategoryName === "All"
                 ? "bg-white border-l-[3px] border-l-accent"
                 : "hover:bg-white border-l-[3px] border-l-transparent"
             }`}
             data-testid="menu-category-all"
           >
-            <div className="w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
-              <img src={bagIcon} alt="All" className="w-10 h-10 sm:w-11 sm:h-11 object-contain mix-blend-multiply" />
+            <div className="w-14 h-14 sm:w-14 sm:h-14 flex-shrink-0 flex items-center justify-center">
+              <img src={bagIcon} alt="All" className="w-11 h-11 sm:w-11 sm:h-11 object-contain mix-blend-multiply" />
             </div>
-            <span className={`text-sm sm:text-base font-medium ${activeCategoryName === "All" ? "text-foreground font-semibold" : "text-slate-700"}`}>
+            <span className={`text-base sm:text-base font-medium leading-tight ${activeCategoryName === "All" ? "text-foreground font-semibold" : "text-slate-700"}`}>
               All
             </span>
           </button>
@@ -119,17 +119,17 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.name)}
                 onMouseEnter={() => setActiveCategory(cat.name)}
-                className={`w-full flex items-center gap-3 sm:gap-3.5 px-3 sm:px-4 py-3 sm:py-3.5 text-left transition-colors border-b border-slate-100/60 ${
+                className={`w-full flex items-center gap-3 px-3 sm:px-4 py-3.5 sm:py-3.5 text-left transition-colors border-b border-slate-100/60 ${
                   isActive
                     ? "bg-white border-l-[3px] border-l-accent"
                     : "hover:bg-white border-l-[3px] border-l-transparent"
                 }`}
                 data-testid={`menu-category-${cat.name.toLowerCase().replace(/\s+/g, "-")}`}
               >
-                <div className="w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
+                <div className="w-14 h-14 sm:w-14 sm:h-14 flex-shrink-0">
                   <img src={img} alt={cat.name} className="w-full h-full object-contain mix-blend-multiply" />
                 </div>
-                <span className={`text-sm sm:text-base font-medium ${isActive ? "text-foreground font-semibold" : "text-slate-700"}`}>
+                <span className={`text-base sm:text-base font-medium leading-tight ${isActive ? "text-foreground font-semibold" : "text-slate-700"}`}>
                   {cat.name}
                 </span>
               </button>
@@ -150,7 +150,7 @@ export function CategoryMenuDropdown({ open, onClose }: Props) {
                 <button
                   key={product.id}
                   onClick={() => handleProductClick(product)}
-                  className="text-left text-sm sm:text-base text-slate-700 hover:text-accent font-medium py-3 px-2 border-b border-slate-100 hover:bg-accent/5 sm:hover:bg-white rounded transition-colors"
+                  className="text-left text-[15px] sm:text-base text-slate-700 hover:text-accent font-medium py-3.5 px-2 border-b border-slate-100 hover:bg-accent/5 sm:hover:bg-white rounded transition-colors"
                   data-testid={`menu-product-${product.id}`}
                 >
                   {product.name}

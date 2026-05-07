@@ -131,7 +131,7 @@ export function Footer() {
           <p className="text-white text-xs">
             © {new Date().getFullYear()} FishTokri. All rights reserved.
           </p>
-          <p className="text-white/80 text-xs text-center">
+          <p className="text-white text-xs text-center">
             Designed and Developed by{" "}
             <a
               href="https://www.airavatatechnologies.com/"

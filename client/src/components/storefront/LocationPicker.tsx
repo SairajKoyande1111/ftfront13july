@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X, ChevronLeft, MapPin, Check, Navigation, Loader2, AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { useHub, SuperHub, SubHub } from "@/context/HubContext";
+import { FishTokriLogo } from "@/components/storefront/FishTokriLogo";
 
 type GeoStatus = "idle" | "detecting" | "serviceable" | "unserviceable" | "denied" | "error";
 
@@ -26,14 +27,12 @@ interface PhotonFeature {
 
 async function photonSearch(query: string): Promise<PhotonFeature[]> {
   try {
-    // India bounding box  lon_min,lat_min,lon_max,lat_max
     const res = await fetch(
       `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=8&lang=en&bbox=68.7,8.4,97.3,37.1`,
       { headers: { "Accept-Language": "en" } }
     );
     if (!res.ok) return [];
     const data = await res.json();
-    // Filter to India only
     return (data.features ?? []).filter(
       (f: PhotonFeature) => f.properties.country === "India" || !f.properties.country
     );
@@ -150,8 +149,6 @@ export function LocationPicker() {
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
   }, [searchQuery]);
 
-  /* Check serviceability for a selected Photon feature.
-     Only exact pincode match against sub hub pincode lists is used. */
   const checkServiceability = useCallback((
     pincode: string | undefined,
     locationName: string,
@@ -249,29 +246,49 @@ export function LocationPicker() {
     <div className="fixed inset-0 z-[300] flex items-stretch justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closePicker} />
 
-      {/* Main panel — slide-in from right on both mobile and desktop, like the cart */}
+      {/* Main panel */}
       <div className="relative bg-white w-full h-full sm:max-w-md rounded-none border-l border-border/30 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 max-h-screen">
 
-        {/* Header */}
-        <div className="flex items-start gap-3 px-5 pt-5 pb-3 border-b border-border/30 shrink-0">
-          {step === "sub" && (
-            <button onClick={() => setStep("super")} className="p-1.5 rounded-full hover:bg-muted transition-colors mt-0.5" data-testid="button-location-back">
-              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
+        {/* Premium blue header */}
+        <div className="shrink-0 bg-[#364F9F] px-5 pt-5 pb-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              {step === "sub" && (
+                <button
+                  onClick={() => setStep("super")}
+                  className="p-1.5 rounded-full bg-white/15 hover:bg-white/25 transition-colors"
+                  data-testid="button-location-back"
+                >
+                  <ChevronLeft className="w-5 h-5 text-white" />
+                </button>
+              )}
+              <FishTokriLogo className="h-7 w-auto brightness-0 invert" />
+            </div>
+            <button
+              onClick={closePicker}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white transition-all duration-200"
+              data-testid="button-location-close"
+            >
+              <X className="w-4 h-4" />
             </button>
-          )}
-          <div className="flex-1">
-            <h2 className="text-base font-bold text-foreground leading-tight">Select a location</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Search your area or use current location</p>
-            <div className="flex items-center gap-1.5 mt-2 text-primary">
-              <MapPin className="w-3.5 h-3.5" />
-              <span className="text-xs font-medium">
-                {selectedSubHub ? selectedSubHub.name : selectedSuperHub ? selectedSuperHub.name : "No area selected"}
+          </div>
+
+          <h2 className="text-xl font-bold text-white leading-tight mt-1">
+            {step === "sub" ? `Areas in ${pickedSuper?.name}` : "Select your location"}
+          </h2>
+          <p className="text-white/70 text-sm mt-0.5">
+            {step === "sub" ? "Pick your delivery area below" : "Search your area or detect automatically"}
+          </p>
+
+          {/* Current location pill */}
+          {(selectedSubHub || selectedSuperHub) && (
+            <div className="flex items-center gap-1.5 mt-3 bg-white/15 rounded-full px-3 py-1.5 w-fit">
+              <MapPin className="w-3.5 h-3.5 text-white/80" />
+              <span className="text-xs font-semibold text-white">
+                {selectedSubHub ? selectedSubHub.name : selectedSuperHub?.name}
               </span>
             </div>
-          </div>
-          <button onClick={closePicker} className="flex items-center justify-center w-9 h-9 rounded-full bg-[#364F9F] text-white transition-all duration-200 hover:bg-[#2a3d7a] shadow-md mt-0.5" data-testid="button-location-close">
-            <X className="w-4 h-4" />
-          </button>
+          )}
         </div>
 
         {/* Search Box */}
@@ -302,10 +319,9 @@ export function LocationPicker() {
             )}
           </div>
 
-          {/* Search Dropdown — floats above the content */}
+          {/* Search Dropdown */}
           {showDropdown && (
             <div className="absolute left-5 right-5 top-full mt-1 bg-white rounded-2xl border border-border/50 shadow-2xl z-20 overflow-hidden">
-              {/* Use current location — always top of dropdown */}
               <button
                 onClick={() => { setShowDropdown(false); setSearchQuery(""); handleDetectLocation(); }}
                 disabled={geoStatus === "detecting"}
@@ -320,7 +336,6 @@ export function LocationPicker() {
                 </div>
               </button>
 
-              {/* Search results */}
               {isSearching ? (
                 <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -379,15 +394,17 @@ export function LocationPicker() {
             onClick={handleDetectLocation}
             disabled={geoStatus === "detecting" || geoStatus === "serviceable"}
             data-testid="button-detect-location"
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {geoStatus === "detecting" ? (
-              <Loader2 className="w-5 h-5 text-primary animate-spin shrink-0" />
-            ) : (
-              <Navigation className="w-5 h-5 text-primary shrink-0" />
-            )}
+            <div className="w-10 h-10 rounded-full bg-[#364F9F] flex items-center justify-center shrink-0">
+              {geoStatus === "detecting" ? (
+                <Loader2 className="w-5 h-5 text-white animate-spin" />
+              ) : (
+                <Navigation className="w-5 h-5 text-white" />
+              )}
+            </div>
             <div className="text-left">
-              <p className="text-sm font-semibold text-primary leading-tight">
+              <p className="text-sm font-bold text-[#364F9F] leading-tight">
                 {geoStatus === "detecting" ? "Detecting location..." : "Use current location"}
               </p>
               <p className="text-xs text-muted-foreground">Auto-detect & check serviceability</p>
@@ -404,89 +421,103 @@ export function LocationPicker() {
         )}
 
         {/* Divider */}
-        <div className="flex items-center gap-3 px-5 mb-2 shrink-0">
+        <div className="flex items-center gap-3 px-5 mb-3 shrink-0">
           <div className="flex-1 h-px bg-border/40" />
-          <span className="text-xs text-muted-foreground font-medium">or select manually</span>
+          <span className="text-xs text-muted-foreground font-medium tracking-wide">or select manually</span>
           <div className="flex-1 h-px bg-border/40" />
         </div>
 
         {/* Scrollable hub list */}
-        <div className="flex-1 overflow-y-auto px-5 pb-5 min-h-0">
+        <div className="flex-1 overflow-y-auto px-5 pb-6 min-h-0">
           {step === "super" ? (
             loadingSuper ? (
               <div className="space-y-3">
-                {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-2xl bg-muted/50 animate-pulse" />)}
+                {[1, 2, 3].map(i => <div key={i} className="h-20 rounded-2xl bg-muted/50 animate-pulse" />)}
               </div>
             ) : superHubs.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">No cities available</p>
             ) : (
-              <div className="space-y-2.5">
-                {superHubs.map(hub => (
-                  <button
-                    key={hub.id}
-                    onClick={() => handleSuperSelect(hub)}
-                    className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left ${
-                      selectedSuperHub?.id === hub.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border/40 hover:border-primary/30 hover:bg-muted/40"
-                    }`}
-                    data-testid={`button-super-hub-${hub.id}`}
-                  >
-                    {hub.imageUrl ? (
-                      <img src={hub.imageUrl} alt={hub.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <MapPin className="w-6 h-6 text-primary" />
+              <div className="space-y-3">
+                {superHubs.map(hub => {
+                  const isSelected = selectedSuperHub?.id === hub.id;
+                  return (
+                    <button
+                      key={hub.id}
+                      onClick={() => handleSuperSelect(hub)}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
+                        isSelected
+                          ? "border-[#364F9F]/50 bg-[#364F9F]/5 shadow-sm"
+                          : "border-border/40 hover:border-[#364F9F]/30 hover:bg-slate-50"
+                      }`}
+                      data-testid={`button-super-hub-${hub.id}`}
+                    >
+                      {hub.imageUrl ? (
+                        <img src={hub.imageUrl} alt={hub.name} className="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-[#364F9F]/10 flex items-center justify-center shrink-0">
+                          <MapPin className="w-7 h-7 text-[#364F9F]" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-foreground text-base">{hub.name}</p>
+                        {hub.location && <p className="text-sm text-muted-foreground truncate mt-0.5">{hub.location}</p>}
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground">{hub.name}</p>
-                      {hub.location && <p className="text-xs text-muted-foreground truncate mt-0.5">{hub.location}</p>}
-                    </div>
-                    {selectedSuperHub?.id === hub.id && <Check className="w-5 h-5 text-primary shrink-0" />}
-                  </button>
-                ))}
+                      {isSelected && (
+                        <div className="w-7 h-7 rounded-full bg-[#364F9F] flex items-center justify-center shrink-0">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )
           ) : (
             loadingSub ? (
               <div className="space-y-3">
-                {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-2xl bg-muted/50 animate-pulse" />)}
+                {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-2xl bg-muted/50 animate-pulse" />)}
               </div>
             ) : subHubs.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">No areas available yet</p>
             ) : (
-              <div className="space-y-2">
-                {subHubs.map(sub => (
-                  <button
-                    key={sub.id}
-                    onClick={() => handleSubSelect(sub)}
-                    className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left ${
-                      selectedSubHub?.id === sub.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border/40 hover:border-primary/30 hover:bg-muted/40"
-                    }`}
-                    data-testid={`button-sub-hub-${sub.id}`}
-                  >
-                    {sub.imageUrl ? (
-                      <img src={sub.imageUrl} alt={sub.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <MapPin className="w-5 h-5 text-primary" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground">{sub.name}</p>
-                      {sub.location && <p className="text-xs text-muted-foreground truncate mt-0.5">{sub.location}</p>}
-                      {sub.pincodes?.length > 0 && (
-                        <p className="text-xs text-primary/60 font-medium mt-0.5">
-                          Pincodes: {sub.pincodes.slice(0, 4).join(", ")}{sub.pincodes.length > 4 ? "..." : ""}
-                        </p>
+              <div className="space-y-2.5">
+                {subHubs.map(sub => {
+                  const isSelected = selectedSubHub?.id === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => handleSubSelect(sub)}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
+                        isSelected
+                          ? "border-[#364F9F]/50 bg-[#364F9F]/5 shadow-sm"
+                          : "border-border/40 hover:border-[#364F9F]/30 hover:bg-slate-50"
+                      }`}
+                      data-testid={`button-sub-hub-${sub.id}`}
+                    >
+                      {sub.imageUrl ? (
+                        <img src={sub.imageUrl} alt={sub.name} className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-[#364F9F]/10 flex items-center justify-center shrink-0">
+                          <MapPin className="w-6 h-6 text-[#364F9F]" />
+                        </div>
                       )}
-                    </div>
-                    {selectedSubHub?.id === sub.id && <Check className="w-5 h-5 text-primary shrink-0" />}
-                  </button>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-foreground">{sub.name}</p>
+                        {sub.location && <p className="text-sm text-muted-foreground truncate mt-0.5">{sub.location}</p>}
+                        {sub.pincodes?.length > 0 && (
+                          <p className="text-xs text-[#364F9F]/60 font-medium mt-0.5">
+                            Pincodes: {sub.pincodes.slice(0, 4).join(", ")}{sub.pincodes.length > 4 ? "..." : ""}
+                          </p>
+                        )}
+                      </div>
+                      {isSelected && (
+                        <div className="w-7 h-7 rounded-full bg-[#364F9F] flex items-center justify-center shrink-0">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )
           )}

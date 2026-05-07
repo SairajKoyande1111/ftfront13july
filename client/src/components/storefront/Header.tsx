@@ -4,7 +4,7 @@ import { useCart } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { useHub } from "@/context/HubContext";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff } from "lucide-react";
+import { MicOff } from "lucide-react";
 import { CategoryMenuDropdown } from "@/components/storefront/CategoryMenu";
 import { OtpModal } from "@/components/storefront/OtpModal";
 import { LocationPicker } from "@/components/storefront/LocationPicker";
@@ -15,6 +15,7 @@ import userImg from "@assets/user_(1)_1774707188827.png";
 import searchImg from "@assets/search-interface-symbol_1774706690468.png";
 import locationImg from "@assets/placeholder_(1)_1774706943633.png";
 import menuIconImg from "@assets/category_1774778224285.png";
+import micImg from "@assets/mic_1778182669857.png";
 
 const SEARCH_PHRASES = [
   "Search for fresh seafood...",
@@ -176,11 +177,14 @@ export function Header({
             <button
               type="button"
               onClick={startVoiceSearch}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full transition-colors ${isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-primary"}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full transition-colors ${isListening ? "animate-pulse" : "hover:opacity-70"}`}
               aria-label={isListening ? "Stop voice search" : "Start voice search"}
               data-testid="button-voice-search-desktop"
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening
+                ? <MicOff className="w-4 h-4 text-red-500" />
+                : <img src={micImg} alt="Voice search" className="w-4 h-4 object-contain opacity-50 hover:opacity-80" />
+              }
             </button>
           </form>
         )}
@@ -242,11 +246,11 @@ export function Header({
           {/* Location */}
           <button
             onClick={openPicker}
-            className="flex items-center gap-1 pl-1.5 border-l border-border/50 ml-0.5 hover:opacity-70 transition-opacity"
+            className="flex items-center gap-1.5 pl-2 border-l border-border/50 ml-0.5 hover:opacity-70 transition-opacity"
             data-testid="button-location-picker"
           >
-            <img src={locationImg} alt="Location" className="w-3.5 h-3.5 object-contain" />
-            <span className={`text-xs sm:text-sm font-medium max-w-[80px] truncate ${selectedSubHub ? "text-primary" : "text-foreground"}`}>
+            <img src={locationImg} alt="Location" className="w-5 h-5 sm:w-5 sm:h-5 object-contain flex-shrink-0" />
+            <span className={`text-sm sm:text-sm font-semibold max-w-[90px] truncate ${selectedSubHub ? "text-primary" : "text-foreground"}`}>
               {locationLabel}
             </span>
           </button>
@@ -282,11 +286,14 @@ export function Header({
             <button
               type="button"
               onClick={startVoiceSearch}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full transition-colors ${isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-primary"}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 p-0.5 rounded-full transition-colors ${isListening ? "animate-pulse" : "hover:opacity-70"}`}
               aria-label={isListening ? "Stop voice search" : "Start voice search"}
               data-testid="button-voice-search-mobile"
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening
+                ? <MicOff className="w-4 h-4 text-red-500" />
+                : <img src={micImg} alt="Voice search" className="w-4 h-4 object-contain opacity-50 hover:opacity-80" />
+              }
             </button>
           </form>
         </div>
