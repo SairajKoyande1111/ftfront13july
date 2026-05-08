@@ -1,16 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, ChevronLeft, MapPin, Check, Loader2, AlertCircle, CheckCircle2, Search, Navigation } from "lucide-react";
+import { X, ChevronLeft, MapPin, Check, Loader2, AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { useHub, SuperHub, SubHub } from "@/context/HubContext";
 import { FishTokriLogo } from "@/components/storefront/FishTokriLogo";
-import {
-  nominatimSearch,
-  nominatimReverse,
-  extractPincode,
-  getResultMainText,
-  getResultSecondaryText,
-  type NominatimResult,
-} from "@/lib/nominatim";
+import { useGoogleMaps } from "@/hooks/use-google-maps";
+import googleMapsIcon from "@assets/logo_(15)_1778186984164.png";
 
 type GeoStatus = "idle" | "detecting" | "serviceable" | "unserviceable" | "denied" | "error";
 
@@ -53,7 +47,55 @@ function useTypewriter(phrases: string[], speed = 60, pause = 1800) {
   return displayed;
 }
 
+/* ── Google Maps ─────────────────────────────────────────────────────── */
+declare global { interface Window { google: any } }
+
+interface GooglePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting: { main_text: string; secondary_text: string };
+}
+
+async function googlePlacesSearch(query: string): Promise<GooglePrediction[]> {
+  if (!window.google?.maps?.places) return [];
+  return new Promise((resolve) => {
+    const svc = new window.google.maps.places.AutocompleteService();
+    svc.getPlacePredictions(
+      { input: query, componentRestrictions: { country: "in" }, types: ["geocode"] },
+      (preds: GooglePrediction[] | null, status: string) => {
+        if (status !== "OK" || !preds) { resolve([]); return; }
+        resolve(preds);
+      }
+    );
+  });
+}
+
+async function getPincodeFromPlaceId(placeId: string): Promise<string | null> {
+  if (!window.google?.maps) return null;
+  return new Promise((resolve) => {
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ placeId }, (results: any, status: string) => {
+      if (status !== "OK" || !results?.[0]) { resolve(null); return; }
+      const comp = results[0].address_components.find((c: any) => c.types.includes("postal_code"));
+      resolve(comp?.long_name ?? null);
+    });
+  });
+}
+
+async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+  if (!window.google?.maps) return null;
+  return new Promise((resolve) => {
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng: lon } }, (results: any, status: string) => {
+      if (status !== "OK" || !results?.[0]) { resolve(null); return; }
+      const comp = results[0].address_components.find((c: any) => c.types.includes("postal_code"));
+      resolve(comp?.long_name ?? null);
+    });
+  });
+}
+
 export function LocationPicker() {
+  const mapsReady = useGoogleMaps();
   const { isPickerOpen, closePicker, setHub, selectedSuperHub, selectedSubHub } = useHub();
   const [step, setStep] = useState<"super" | "sub">("super");
   const [pickedSuper, setPickedSuper] = useState<SuperHub | null>(null);
@@ -61,7 +103,7 @@ export function LocationPicker() {
   const [geoMessage, setGeoMessage] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
+  const [searchResults, setSearchResults] = useState<GooglePrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchStatus, setSearchStatus] = useState<"idle" | "serviceable" | "unserviceable">("idle");
   const [searchMessage, setSearchMessage] = useState("");
@@ -113,7 +155,7 @@ export function LocationPicker() {
     }
   }, [isPickerOpen]);
 
-  /* Debounced Nominatim search */
+  /* Debounced Google Places search */
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     const q = searchQuery.trim();
@@ -126,12 +168,12 @@ export function LocationPicker() {
     setIsSearching(true);
     setShowDropdown(true);
     searchTimeoutRef.current = setTimeout(async () => {
-      const results = await nominatimSearch(q);
+      const results = await googlePlacesSearch(q);
       setSearchResults(results);
       setIsSearching(false);
-    }, 500);
+    }, 350);
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
-  }, [searchQuery]);
+  }, [searchQuery, mapsReady]);
 
   const checkServiceability = useCallback((
     pincode: string | undefined,
@@ -159,12 +201,14 @@ export function LocationPicker() {
     return false;
   }, [allSubHubs, superHubs, setHub]);
 
-  const handleSearchResultSelect = useCallback(async (result: NominatimResult) => {
-    const title = getResultMainText(result);
+  const handleSearchResultSelect = useCallback(async (prediction: GooglePrediction) => {
+    const title = prediction.structured_formatting.main_text;
     setSearchQuery("");
     setShowDropdown(false);
     setSearchResults([]);
-    const pincode = extractPincode(result);
+    setIsSearching(true);
+    const pincode = await getPincodeFromPlaceId(prediction.place_id);
+    setIsSearching(false);
     checkServiceability(pincode ?? undefined, title);
   }, [checkServiceability]);
 
@@ -181,8 +225,7 @@ export function LocationPicker() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         setGeoMessage("Checking serviceability...");
-        const result = await nominatimReverse(pos.coords.latitude, pos.coords.longitude);
-        const pincode = result ? extractPincode(result) : null;
+        const pincode = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
         if (!pincode) {
           setGeoStatus("error");
           setGeoMessage("Couldn't determine your area. Please select manually.");
@@ -319,8 +362,8 @@ export function LocationPicker() {
                 disabled={geoStatus === "detecting"}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-orange-50 transition-colors border-b border-border/30"
               >
-                <div className="w-9 h-9 rounded-full bg-[#364F9F]/10 border border-[#364F9F]/20 flex items-center justify-center shrink-0">
-                  <Navigation className="w-4 h-4 text-[#364F9F]" />
+                <div className="w-9 h-9 rounded-full bg-white border border-slate-100 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                  <img src={googleMapsIcon} alt="Maps" className="w-7 h-7 object-contain" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-800">Use current location</p>
@@ -337,18 +380,18 @@ export function LocationPicker() {
                 <div className="px-4 py-3 text-sm text-slate-400 font-normal">No results found. Try a different term.</div>
               ) : (
                 <div className="max-h-[280px] overflow-y-auto">
-                  {searchResults.map((result) => (
+                  {searchResults.map((prediction) => (
                     <button
-                      key={result.place_id}
-                      onClick={() => handleSearchResultSelect(result)}
+                      key={prediction.place_id}
+                      onClick={() => handleSearchResultSelect(prediction)}
                       className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-slate-50 transition-colors border-b border-border/10 last:border-0"
                     >
                       <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
                         <MapPin className="w-4 h-4 text-slate-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{getResultMainText(result)}</p>
-                        <p className="text-xs text-slate-400 font-normal truncate mt-0.5">{getResultSecondaryText(result)}</p>
+                        <p className="text-sm font-semibold text-slate-800 truncate">{prediction.structured_formatting.main_text}</p>
+                        <p className="text-xs text-slate-400 font-normal truncate mt-0.5">{prediction.structured_formatting.secondary_text}</p>
                       </div>
                     </button>
                   ))}
@@ -380,13 +423,11 @@ export function LocationPicker() {
             data-testid="button-detect-location"
             className="w-full flex items-center gap-4 px-4 py-3 hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${BRAND_BLUE}18` }}>
-              {geoStatus === "detecting" ? (
-                <Loader2 className="w-6 h-6 animate-spin" style={{ color: BRAND_BLUE }} />
-              ) : (
-                <Navigation className="w-6 h-6" style={{ color: BRAND_BLUE }} />
-              )}
-            </div>
+            {geoStatus === "detecting" ? (
+              <Loader2 className="w-12 h-12 animate-spin shrink-0" style={{ color: BRAND_BLUE }} />
+            ) : (
+              <img src={googleMapsIcon} alt="Maps" className="w-12 h-12 object-contain shrink-0" />
+            )}
             <div className="text-left">
               <p className="text-lg font-bold text-slate-800 leading-tight">
                 {geoStatus === "detecting" ? "Detecting location..." : "Use current location"}
