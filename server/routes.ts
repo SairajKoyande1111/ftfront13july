@@ -1098,7 +1098,61 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Valid 10-digit phone number required" });
     }
     const normalised = String(phone).trim();
-    otpStore.set(normalised, { otp: "1234", expiresAt: Date.now() + OTP_TTL_MS });
+
+    // Generate a secure 4-digit OTP
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
+    otpStore.set(normalised, { otp, expiresAt: Date.now() + OTP_TTL_MS });
+
+    // Send via AiSensy WhatsApp
+    const apiKey = process.env.AISENSY_API_KEY;
+    const userName = process.env.AISENSY_USERNAME || "ATHA FOODS PRIVATE LIMITED";
+    if (!apiKey) {
+      console.error("[OTP] AISENSY_API_KEY not set — OTP not sent via WhatsApp");
+      return res.json({ message: "OTP sent" });
+    }
+
+    try {
+      const destination = `91${normalised}`;
+      const payload = {
+        apiKey,
+        campaignName: "Fishtokriotp",
+        destination,
+        userName,
+        templateParams: ["user"],
+        source: "fishtokri-app",
+        media: {},
+        buttons: [
+          {
+            type: "button",
+            sub_type: "url",
+            index: 0,
+            parameters: [{ type: "text", text: otp }],
+          },
+        ],
+        carouselCards: [],
+        location: {},
+        attributes: {},
+        paramsFallbackValue: { FirstName: "user" },
+      };
+
+      const response = await fetch("https://backend.aisensy.com/campaign/t1/api/v2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`[OTP] AiSensy error ${response.status}: ${errText}`);
+        return res.status(502).json({ message: "Failed to send OTP. Please try again." });
+      }
+
+      console.log(`[OTP] Sent to ${destination} via AiSensy`);
+    } catch (err) {
+      console.error("[OTP] AiSensy request failed:", err);
+      return res.status(502).json({ message: "Failed to send OTP. Please try again." });
+    }
+
     res.json({ message: "OTP sent" });
   });
 
