@@ -150,7 +150,7 @@ export default function ProductDetail() {
   const [, params] = useRoute("/product/:id");
   const [, setLocation] = useLocation();
   const { data: products, isLoading } = useProducts();
-  const { addToCart, appliedCoupon, setAppliedCoupon } = useCart();
+  const { addToCart, appliedCoupon, setAppliedCoupon, items: cartItems } = useCart();
   const { customer, openLoginModal } = useCustomer();
   const [qty, setQty] = useState(1);
   const recipeScrollRef = useRef<HTMLDivElement>(null);
@@ -159,6 +159,13 @@ export default function ProductDetail() {
   const productId = params?.id;
   const product = products?.find((p) => p.id === productId);
   const isUnavailable = product?.status === "unavailable";
+
+  // Inventory cap — same logic as home screen and ComboDetail
+  const cartItem = cartItems.find(i => (i.originalId ?? String(i.id)) === product?.id);
+  const currentCartQty = cartItem?.quantity ?? 0;
+  const maxAddable = product?.availableQty != null
+    ? Math.max(0, product.availableQty - currentCartQty)
+    : 999;
   const [offersExpanded, setOffersExpanded] = useState(false);
 
   const { coupons: liveCoupons } = useProductCoupons(productId, product?.couponIds ?? []);
@@ -380,8 +387,9 @@ export default function ProductDetail() {
                 </button>
                 <span className="w-10 text-center font-semibold text-sm">{qty}</span>
                 <button
-                  onClick={() => setQty(q => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors"
+                  onClick={() => setQty(q => Math.min(q + 1, maxAddable))}
+                  disabled={qty >= maxAddable}
+                  className="w-10 h-10 flex items-center justify-center hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -391,7 +399,7 @@ export default function ProductDetail() {
                   if (!customer) { openLoginModal(); return; }
                   for (let i = 0; i < qty; i++) addToCart(product, 1, true);
                 }}
-                disabled={isUnavailable}
+                disabled={isUnavailable || maxAddable <= 0}
                 className="flex-1 h-11 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-sm shadow-md"
               >
                 {isUnavailable ? "Out of Stock" : `Add ${qty} to Cart — ₹${(product.price ?? 0) * qty}`}

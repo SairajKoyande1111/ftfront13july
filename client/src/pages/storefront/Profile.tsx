@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useProducts } from "@/hooks/use-products";
 import Lottie from "lottie-react";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
@@ -781,11 +782,7 @@ export default function Profile() {
     refetchOnMount: true,
   });
 
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ["/api/products", selectedSubHub?.dbName],
-    enabled: !!customer && activeTab === "My Orders" && !!selectedSubHub,
-    staleTime: 60 * 1000,
-  });
+  const { data: products = [] } = useProducts();
 
   const productImageMap = useMemo<Record<string, string>>(() => {
     const map: Record<string, string> = {};
