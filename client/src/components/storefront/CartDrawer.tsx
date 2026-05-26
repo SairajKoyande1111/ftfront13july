@@ -494,25 +494,60 @@ export function CartDrawer() {
       return;
     }
     const fullAddress = [selected.building, selected.street, selected.area, selected.pincode].filter(Boolean).join(", ");
-    const orderItems = items.map(i => ({ productId: i.originalId ?? String(i.id), quantity: i.quantity, name: i.name, price: i.price, imageUrl: i.imageUrl ?? null }));
-    const slotLabel = selectedTimeslot.isInstant
-      ? "Instant Delivery (Porter)"
-      : selectedTimeslot.label;
+    const orderItems = items.map(i => ({
+      productId: i.originalId ?? String(i.id),
+      quantity: i.quantity,
+      name: i.name,
+      price: i.price,
+      unit: (i as any).unit ?? null,
+      imageUrl: i.imageUrl ?? null,
+    }));
+    const slotLabel = selectedTimeslot.isInstant ? "Instant Delivery (Porter)" : selectedTimeslot.label;
+    const slotCharge = selectedTimeslot.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0;
+    const subtotal = totalPrice;
+    const orderTotal = subtotal - discountAmount + slotCharge;
+    const today = new Date();
+    const deliveryDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
     createOrder(
       {
         customerName: selected.name || customer?.name || "",
         phone: selected.phone || customer?.phone || "",
+        email: (customer as any)?.email ?? null,
+        customerId: customer?.id ?? null,
         deliveryArea: selected.area,
         address: fullAddress,
-        notes: selected.instructions,
+        deliveryAddressDetail: {
+          name: selected.name,
+          phone: selected.phone,
+          building: selected.building,
+          street: selected.street,
+          area: selected.area,
+          pincode: selected.pincode,
+          type: selected.type,
+          label: selected.label,
+          instructions: selected.instructions,
+        },
+        notes: selected.instructions || null,
         items: orderItems,
-        deliveryType: selectedTimeslot.isInstant ? "instant" : "slot",
+        subtotal,
+        discount: discountAmount,
+        slotCharge,
+        total: orderTotal,
+        source: "online",
+        deliveryType: "delivery",
+        scheduleType: selectedTimeslot.isInstant ? "instant" : "slot",
+        timeslotId: selectedTimeslot.id,
         timeslotLabel: slotLabel,
-        instantDeliveryCharge: selectedTimeslot.isInstant ? selectedTimeslot.extraCharge : null,
+        timeslotStart: (selectedTimeslot as any).startTime ?? null,
+        timeslotEnd: (selectedTimeslot as any).endTime ?? null,
+        deliveryDate,
+        instantDeliveryCharge: slotCharge > 0 ? slotCharge : null,
         couponCode: appliedCoupon?.code ?? null,
         discountAmount: discountAmount > 0 ? discountAmount : null,
         paymentMethod: paymentMethod === "online" ? "upi" : "cod",
-      },
+        paymentMode: paymentMethod === "online" ? "upi" : "cash",
+      } as any,
       { onSuccess: () => { setIsSuccess(true); clearCart(); } }
     );
   };

@@ -154,20 +154,48 @@ export type OrderRequest = {
   subHubName?: string | null;
 };
 
+export type DeliveryAddressDetail = {
+  name?: string | null;
+  phone?: string | null;
+  building?: string | null;
+  street?: string | null;
+  area?: string | null;
+  pincode?: string | null;
+  type?: string | null;
+  label?: string | null;
+  instructions?: string | null;
+};
+
 export type InsertOrderRequest = {
   orderId?: string | null;
+  customerId?: string | null;
   customerName: string;
   phone: string;
+  email?: string | null;
   deliveryArea: string;
   address: string;
+  deliveryAddressDetail?: DeliveryAddressDetail | null;
   items: OrderItem[];
+  subtotal?: number | null;
+  discount?: number | null;
+  slotCharge?: number | null;
+  total?: number | null;
   notes?: string | null;
+  source?: string | null;
   hubDbName?: string | null;
   deliveryType?: string | null;
+  scheduleType?: string | null;
+  timeslotId?: string | null;
   timeslotLabel?: string | null;
+  timeslotStart?: string | null;
+  timeslotEnd?: string | null;
+  deliveryDate?: string | null;
   instantDeliveryCharge?: number | null;
   coupon?: OrderCoupon | null;
+  couponCode?: string | null;
+  discountAmount?: number | null;
   paymentMethod?: string | null;
+  paymentMode?: string | null;
   superHubId?: string | null;
   subHubId?: string | null;
   subHubName?: string | null;
@@ -225,25 +253,53 @@ export const insertSectionSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+const deliveryAddressDetailSchema = z.object({
+  name: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  building: z.string().nullable().optional(),
+  street: z.string().nullable().optional(),
+  area: z.string().nullable().optional(),
+  pincode: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+  label: z.string().nullable().optional(),
+  instructions: z.string().nullable().optional(),
+});
+
 export const insertOrderRequestSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required"),
+  email: z.string().nullable().optional(),
+  customerId: z.string().nullable().optional(),
   deliveryArea: z.string().min(1, "Delivery area is required"),
   address: z.string().min(1, "Address is required"),
+  deliveryAddressDetail: deliveryAddressDetailSchema.nullable().optional(),
   items: z.array(z.object({
     productId: z.string(),
     quantity: z.number().min(1),
     name: z.string(),
     price: z.number().nullable(),
+    unit: z.string().nullable().optional(),
+    imageUrl: z.string().nullable().optional(),
   })).min(1, "At least one item is required"),
+  subtotal: z.number().nullable().optional(),
+  discount: z.number().nullable().optional(),
+  slotCharge: z.number().nullable().optional(),
+  total: z.number().nullable().optional(),
   notes: z.string().nullable().optional(),
+  source: z.string().nullable().optional(),
   hubDbName: z.string().nullable().optional(),
   deliveryType: z.string().nullable().optional(),
+  scheduleType: z.string().nullable().optional(),
+  timeslotId: z.string().nullable().optional(),
   timeslotLabel: z.string().nullable().optional(),
+  timeslotStart: z.string().nullable().optional(),
+  timeslotEnd: z.string().nullable().optional(),
+  deliveryDate: z.string().nullable().optional(),
   instantDeliveryCharge: z.number().nullable().optional(),
   couponCode: z.string().nullable().optional(),
   discountAmount: z.number().nullable().optional(),
   paymentMethod: z.string().nullable().optional(),
+  paymentMode: z.string().nullable().optional(),
 });
 
 export const insertUserSchema = z.object({

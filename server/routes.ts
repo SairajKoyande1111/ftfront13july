@@ -389,7 +389,7 @@ export async function registerRoutes(
     try {
       const input = api.orders.create.input.parse(req.body);
 
-      // Generate daily-sequential FTW order ID: #FTWYYYYMMDD1, #FTWYYYYMMDD2, …
+      // Generate daily-sequential FTW order ID: #FTWYYYYMMDD01, #FTWYYYYMMDD02, …
       let generatedOrderId: string | null = null;
       try {
         const OrderModel = getOrderModel();
@@ -402,8 +402,9 @@ export async function registerRoutes(
         const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
         const todayCount = await OrderModel.countDocuments({
           createdAt: { $gte: startOfDay, $lt: endOfDay },
+          orderId: { $regex: /^#FTW/ },
         });
-        generatedOrderId = `#FTW${dateStr}${todayCount + 1}`;
+        generatedOrderId = `#FTW${dateStr}${String(todayCount + 1).padStart(2, "0")}`;
       } catch { /* non-fatal — will fall back to MongoDB id */ }
 
       // FIFO inventory deduction if hubDbName is provided
@@ -449,17 +450,25 @@ export async function registerRoutes(
 
       // Resolve coupon details and hub identity before persisting
       let resolvedCoupon: any = null;
-      let resolvedSuperHubId: any = null;
-      let resolvedSubHubId: any = null;
+      let resolvedSuperHubId: string | null = null;
+      let resolvedSuperHubName: string | null = null;
+      let resolvedSubHubId: string | null = null;
       let resolvedSubHubName: string | null = null;
 
       if (input.hubDbName) {
         try {
           const subHub = await SubHubModel.findOne({ dbName: input.hubDbName }).lean() as any;
           if (subHub) {
-            resolvedSubHubId = subHub._id;
-            resolvedSuperHubId = subHub.superHubId;
+            resolvedSubHubId = subHub._id.toString();
             resolvedSubHubName = subHub.name;
+            resolvedSuperHubId = subHub.superHubId?.toString() ?? null;
+            // Look up SuperHub name
+            if (subHub.superHubId) {
+              try {
+                const superHub = await SuperHubModel.findById(subHub.superHubId).lean() as any;
+                if (superHub) resolvedSuperHubName = superHub.name;
+              } catch { /* non-fatal */ }
+            }
           }
         } catch (hubLookupErr) {
           console.error("Hub lookup error:", hubLookupErr);
@@ -494,18 +503,58 @@ export async function registerRoutes(
         }
       }
 
-      const orderInput = {
+      // Compute financials
+      const itemsTotal = (input.items as any[]).reduce(
+        (sum: number, item: any) => sum + ((item.price ?? 0) * (item.quantity ?? 1)), 0
+      );
+      const subtotal = input.subtotal ?? itemsTotal;
+      const discount = input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
+      const slotCharge = input.slotCharge ?? input.instantDeliveryCharge ?? 0;
+      const total = input.total ?? subtotal - discount + slotCharge;
+
+      // Build coupon arrays
+      const couponIds = resolvedCoupon ? [resolvedCoupon.couponId.toString()] : [];
+      const couponCodes = resolvedCoupon ? [resolvedCoupon.code] : [];
+      const coupons = resolvedCoupon ? [resolvedCoupon] : [];
+
+      // Derive paymentMode
+      const paymentMode = input.paymentMode ?? (input.paymentMethod === "upi" ? "upi" : "cash");
+
+      // Today's date for deliveryDate fallback
+      const now2 = new Date();
+      const deliveryDate = input.deliveryDate ??
+        `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, "0")}-${String(now2.getDate()).padStart(2, "0")}`;
+
+      const orderInput: any = {
         ...input,
-        ...(generatedOrderId && { orderId: generatedOrderId }),
+        orderId: generatedOrderId,
+        source: input.source ?? "online",
+        deliveryType: input.deliveryType ?? "delivery",
+        scheduleType: input.scheduleType ?? (input.deliveryType === "instant" ? "instant" : "slot"),
+        subtotal,
+        discount,
+        slotCharge,
+        total,
+        dueAmount: total,
+        paidAmount: 0,
+        paymentStatus: "unpaid",
+        paymentMode,
+        payments: [],
+        couponIds,
+        couponCodes,
+        coupons,
+        deliveryDate,
+        inventoryDeducted: !!input.hubDbName,
         ...(resolvedCoupon && { coupon: resolvedCoupon }),
         ...(resolvedSuperHubId && { superHubId: resolvedSuperHubId }),
+        ...(resolvedSuperHubName && { superHubName: resolvedSuperHubName }),
         ...(resolvedSubHubId && { subHubId: resolvedSubHubId }),
         ...(resolvedSubHubName && { subHubName: resolvedSubHubName }),
       };
 
       const order = await storage.createOrderRequest(orderInput);
 
-      const total = (order.items as any[]).reduce((sum: number, item: any) => {
+      const orderItemsTotal = (order.items as any[]).reduce((sum: number, item: any) => {
         return sum + ((item.price ?? 0) * (item.quantity ?? 1));
       }, 0);
 
@@ -518,7 +567,7 @@ export async function registerRoutes(
         items: order.items,
         status: order.status,
         notes: order.notes ?? null,
-        total,
+        total: (order as any).total ?? orderItemsTotal,
         placedAt: order.createdAt,
       });
 

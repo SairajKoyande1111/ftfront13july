@@ -1,0 +1,118 @@
+[{
+  "_id": {
+    "$oid": "6a15c4bb77ec3e7f78d8fe3e"
+  },
+  "customerId": "6a15271e9bbeed61c0e8efc1",
+  "customerName": "Frontend created customer",
+  "phone": "7507219775",
+  "email": "itsmeezio116@gmail.com",
+  "items": [
+    {
+      "productId": "6a1544953f1687ab88db64c8",
+      "name": "Chicken Wings",
+      "price": 500,
+      "quantity": 1,
+      "unit": "per kg"
+    }
+  ],
+  "subtotal": 500,
+  "discount": 0,
+  "slotCharge": 0,
+  "total": 500,
+  "deliveryType": "delivery",
+  "address": "test · test, test · 400606",
+  "deliveryArea": "test",
+  "deliveryAddressDetail": {
+    "name": "Frontend created customer",
+    "phone": "7507219775",
+    "building": "test",
+    "street": "test",
+    "area": "test",
+    "pincode": "400606",
+    "type": "house",
+    "label": "Home",
+    "instructions": "test",
+    "_id": "6a1527fa885c97ebd8a0cf77"
+  },
+  "pickupLocation": "",
+  "notes": "",
+  "status": "pending",
+  "source": "admin_manual",
+  "subHubId": "6a153ecf3f1687ab88db6331",
+  "subHubName": "Thane",
+  "superHubId": "6a153dff3f1687ab88db628e",
+  "superHubName": "Mumbai",
+  "couponIds": [],
+  "couponCodes": [],
+  "coupons": [],
+  "paymentStatus": "unpaid",
+  "payments": [],
+  "paidAmount": 0,
+  "dueAmount": 500,
+  "paymentMode": "cash",
+  "scheduleType": "slot",
+  "deliveryDate": "2026-05-26",
+  "timeslotId": "6a15c05d8234f4783cea43c7",
+  "timeslotLabel": "09:00 - 10:59",
+  "timeslotStart": "09:00",
+  "timeslotEnd": "10:59",
+  "createdAt": {
+    "$date": "2026-05-26T16:05:15.905Z"
+  },
+  "updatedAt": {
+    "$date": "2026-05-26T16:05:15.905Z"
+  },
+  "orderId": "#FTS202605261",
+  "inventoryDeducted": true
+},
+{
+  "_id": {
+    "$oid": "6a15db7376a092bc3b4637f2"
+  },
+  "orderId": null,
+  "customerName": "Sairaj Koyande",
+  "phone": "9619523254",
+  "deliveryArea": "Kalyan",
+  "address": "205/A KAIRALI PARK, NEAR SHREYASH HOSPITAL, KATEMANIVALI, Kalyan, 421306",
+  "items": [
+    {
+      "productId": "6a15b1548234f4783cea40a2",
+      "quantity": 3,
+      "name": "Chicken and Fish combo",
+      "price": 1100
+    },
+    {
+      "productId": "6a1547663f1687ab88db65b1",
+      "quantity": 2,
+      "name": "Fish",
+      "price": 600
+    }
+  ],
+  "status": "pending",
+  "notes": "",
+  "createdAt": {
+    "$date": "2026-05-26T17:42:11.728Z"
+  },
+  "deliveryType": "slot",
+  "timeslotLabel": "11:00 PM - 11:30 PM",
+  "instantDeliveryCharge": null,
+  "coupon": {
+    "couponId": {
+      "$oid": "6a15c7366ed6492bca76e2f1"
+    },
+    "code": "FISH20",
+    "discountType": "flat",
+    "discountValue": 50,
+    "discountAmount": 50
+  },
+  "paymentMethod": "cod",
+  "superHubId": {
+    "$oid": "6a153dff3f1687ab88db628e"
+  },
+  "subHubId": {
+    "$oid": "6a153ecf3f1687ab88db6331"
+  },
+  "subHubName": "Thane",
+  "__v": 0,
+  "inventoryDeducted": true
+}]
