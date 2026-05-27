@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "8ABL7zuGnrVtUGlAcVmbK"
+uri = "file://WALLET_INTEGRATION_DOCS.md"
+type = "text"
+title = "Wallet Integration Docs — for Admin Side"
