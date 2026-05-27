@@ -762,6 +762,18 @@ export async function registerRoutes(
         }
       }
 
+      // Deduct wallet balance if customer used wallet funds
+      const walletAmountUsed = (input as any).walletAmountUsed ?? 0;
+      if (walletAmountUsed > 0 && input.customerId) {
+        try {
+          await CustomerDbModel.findByIdAndUpdate(input.customerId, {
+            $inc: { walletBalance: -walletAmountUsed },
+          });
+        } catch (walletErr) {
+          console.error("[Wallet] Deduction error:", walletErr);
+        }
+      }
+
       res.status(201).json(order);
     } catch (err) {
       if (err instanceof z.ZodError) {

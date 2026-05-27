@@ -130,6 +130,7 @@ export function CartDrawer() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [selectedTimeslotId, setSelectedTimeslotId] = useState<string | null>(null);
   const [expandedInstructions, setExpandedInstructions] = useState<Record<number, boolean>>({});
+  const [useWallet, setUseWallet] = useState(false);
 
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
@@ -538,6 +539,11 @@ export function CartDrawer() {
     }
   };
 
+  const walletBalance = (customer as any)?.walletBalance ?? 0;
+  const rawTotal = totalPrice - discountAmount + pincodeDeliveryCharge + (selectedTimeslot?.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0);
+  const walletDeduction = useWallet ? Math.min(walletBalance, rawTotal) : 0;
+  const finalTotal = rawTotal - walletDeduction;
+
   const placeOrder = () => {
     const selected = savedAddresses.find(a => a.id === activeAddressId);
     if (!selected) return;
@@ -558,7 +564,6 @@ export function CartDrawer() {
     const instantCharge = selectedTimeslot.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0;
     const slotCharge = pincodeDeliveryCharge + instantCharge;
     const subtotal = totalPrice;
-    const orderTotal = subtotal - discountAmount + slotCharge;
     const today = new Date();
     const deliveryDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
@@ -587,7 +592,7 @@ export function CartDrawer() {
         subtotal,
         discount: discountAmount,
         slotCharge,
-        total: orderTotal,
+        total: finalTotal,
         source: "online",
         deliveryType: "delivery",
         scheduleType: selectedTimeslot.isInstant ? "instant" : "slot",
@@ -599,8 +604,15 @@ export function CartDrawer() {
         couponCode: appliedCoupon?.code ?? null,
         discountAmount: discountAmount > 0 ? discountAmount : null,
         paymentMode: paymentMethod === "online" ? "upi" : "cash",
+        walletAmountUsed: walletDeduction > 0 ? walletDeduction : null,
       } as any,
-      { onSuccess: () => { setIsSuccess(true); clearCart(); } }
+      {
+        onSuccess: () => {
+          setIsSuccess(true);
+          clearCart();
+          setUseWallet(false);
+        }
+      }
     );
   };
 
@@ -991,18 +1003,25 @@ export function CartDrawer() {
                             <span className="font-semibold text-amber-600 text-xs">+₹{selectedTimeslot.extraCharge}</span>
                           </div>
                         )}
+                        {walletDeduction > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-blue-600 flex items-center gap-1">
+                              <img src={iconWalletImg} alt="" className="w-3 h-3 object-contain" style={{ filter: "brightness(0) saturate(100%) invert(28%) sepia(48%) saturate(1517%) hue-rotate(212deg) brightness(91%) contrast(89%)" }} />
+                              Wallet
+                            </span>
+                            <span className="font-semibold text-blue-600">−₹{walletDeduction}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="pt-2 border-t border-border/40 flex justify-between items-center">
                         <span className="font-bold text-foreground">Total</span>
                         <div className="text-right">
-                          {discountAmount > 0 && (
+                          {(discountAmount > 0 || walletDeduction > 0) && (
                             <p className="text-xs text-muted-foreground line-through">
-                              ₹{totalPrice + pincodeDeliveryCharge + (selectedTimeslot?.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0)}
+                              ₹{rawTotal}
                             </p>
                           )}
-                          <span className="text-lg font-bold text-primary">
-                            ₹{totalPrice - discountAmount + pincodeDeliveryCharge + (selectedTimeslot?.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0)}
-                          </span>
+                          <span className="text-lg font-bold text-primary">₹{finalTotal}</span>
                         </div>
                       </div>
                     </div>
@@ -1304,6 +1323,37 @@ export function CartDrawer() {
                         </div>
                     </div>
 
+                    {/* Fishtokri Wallet */}
+                    {customer && walletBalance > 0 && (
+                      <div className="mx-4 mt-4">
+                        <button
+                          type="button"
+                          onClick={() => setUseWallet(w => !w)}
+                          className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all text-left ${useWallet ? "border-[#364F9F] bg-[#364F9F]/5" : "border-border/40 bg-white hover:border-[#364F9F]/30"}`}
+                          data-testid="button-toggle-wallet"
+                        >
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${useWallet ? "border-[#364F9F]" : "border-slate-300"}`}>
+                            {useWallet && <div className="w-2 h-2 rounded-full bg-[#364F9F]" />}
+                          </div>
+                          <img
+                            src={iconWalletImg}
+                            alt=""
+                            className="w-5 h-5 object-contain shrink-0"
+                            style={{ filter: "brightness(0) saturate(100%) invert(28%) sepia(48%) saturate(1517%) hue-rotate(212deg) brightness(91%) contrast(89%)" }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">Use Fishtokri Wallet</p>
+                            <p className="text-xs text-muted-foreground">
+                              Balance: <span className="font-bold" style={{ color: "#364F9F" }}>₹{walletBalance.toLocaleString("en-IN")}</span>
+                              {useWallet && walletDeduction > 0 && (
+                                <span className="ml-1 text-blue-600 font-semibold"> · −₹{walletDeduction} applied</span>
+                              )}
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+
                     {/* Payment Method */}
                     <div className="px-4 mt-5 mb-4 space-y-3">
                       <h3 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
@@ -1350,16 +1400,15 @@ export function CartDrawer() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-xs text-muted-foreground">Total</p>
-                        {discountAmount > 0 && (
-                          <p className="text-xs text-muted-foreground line-through">
-                            ₹{totalPrice + pincodeDeliveryCharge + (selectedTimeslot?.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0)}
-                          </p>
+                        {(discountAmount > 0 || walletDeduction > 0) && (
+                          <p className="text-xs text-muted-foreground line-through">₹{rawTotal}</p>
                         )}
-                        <p className="text-xl font-bold text-primary">
-                          ₹{totalPrice - discountAmount + pincodeDeliveryCharge + (selectedTimeslot?.isInstant ? (selectedTimeslot.extraCharge ?? 0) : 0)}
-                        </p>
+                        <p className="text-xl font-bold text-primary">₹{finalTotal}</p>
                         {discountAmount > 0 && (
                           <p className="text-[10px] text-emerald-600 font-semibold">Saved ₹{discountAmount} with {appliedCoupon!.code}</p>
+                        )}
+                        {walletDeduction > 0 && (
+                          <p className="text-[10px] font-semibold" style={{ color: "#364F9F" }}>−₹{walletDeduction} from Wallet</p>
                         )}
                         {pincodeDeliveryCharge > 0 && (
                           <p className="text-[10px] text-amber-600">incl. ₹{pincodeDeliveryCharge} delivery fee</p>

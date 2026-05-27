@@ -16,9 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import profileAnim1 from "@/assets/lottie/profile1.json";
-import profileAnim2 from "@/assets/lottie/profile2.json";
 import logoutAnim from "@/assets/lottie/logout.json";
+import walletIconImg from "@assets/wallet-filled-money-tool_1779874392752.png";
 import logoutPopupAnim from "@/assets/lottie/logout-fish.json";
 import searchImg from "@assets/search-interface-symbol_1774706690468.png";
 import emptyAddressAnim from "@/assets/lottie/empty-address.json";
@@ -966,17 +965,19 @@ export default function Profile() {
             </Button>
             <h1 className="text-xl sm:text-2xl font-medium text-foreground tracking-tight truncate">My Profile</h1>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <Lottie
-              animationData={profileAnim1}
-              loop
-              className="w-12 h-12 sm:w-14 sm:h-14 shrink-0"
+          <div className="flex items-center gap-2 shrink-0 bg-white border border-blue-100 rounded-2xl px-3 py-2 shadow-sm">
+            <img
+              src={walletIconImg}
+              alt="Wallet"
+              className="w-6 h-6 object-contain shrink-0"
+              style={{ filter: BRAND_BLUE_FILTER }}
             />
-            <Lottie
-              animationData={profileAnim2}
-              loop
-              className="w-12 h-12 sm:w-14 sm:h-14 shrink-0"
-            />
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground font-medium leading-none mb-0.5 whitespace-nowrap">Fishtokri Wallet</p>
+              <p className="text-sm font-bold leading-none whitespace-nowrap" style={{ color: "#364F9F" }}>
+                ₹{(customer.walletBalance ?? 0).toLocaleString("en-IN")}
+              </p>
+            </div>
           </div>
         </div>
 

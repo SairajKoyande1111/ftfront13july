@@ -194,6 +194,7 @@ export type InsertOrderRequest = {
   couponCode?: string | null;
   discountAmount?: number | null;
   paymentMode?: string | null;
+  walletAmountUsed?: number | null;
   superHubId?: string | null;
   subHubId?: string | null;
   subHubName?: string | null;
@@ -374,6 +375,7 @@ export type Customer = {
   dateOfBirth: string | null;
   addresses: CustomerAddress[];
   orders: EmbeddedOrder[];
+  walletBalance: number;
   createdAt: Date;
   updatedAt: Date;
 };
