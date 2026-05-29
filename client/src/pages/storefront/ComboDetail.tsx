@@ -397,7 +397,7 @@ export default function ComboDetail() {
 
   // Weight parsing + combo gross/net weight calculation
   const parseWeightGrams = (str: string | null | undefined): number | null => {
-    if (!str) return null;
+    if (!str || typeof str !== "string") return null;
     const m = str.match(/([\d.]+)\s*(kg|g|gm|gram|grams|kilogram|kilograms)/i);
     if (!m) return null;
     const val = parseFloat(m[1]);
