@@ -1339,9 +1339,9 @@ export function CartDrawer() {
                         </button>
                       ) : (
                         <div className="space-y-2">
-                          {savedAddresses.map(addr => (
+                          {savedAddresses.map((addr, addrIdx) => (
                             <button
-                              key={addr.id}
+                              key={addr.id || addr.pincode || addrIdx}
                               type="button"
                               onClick={() => setSelectedAddressId(addr.id)}
                               className={`w-full text-left p-3.5 rounded-2xl border-2 transition-all ${activeAddressId === addr.id ? "border-primary bg-primary/5" : "border-border/40 bg-white hover:border-primary/30"}`}
@@ -1424,12 +1424,12 @@ export function CartDrawer() {
                               No slots available
                             </div>
                           ) : (
-                            displayTimeslots.map(slot => {
+                            displayTimeslots.map((slot, slotIdx) => {
                               const isSelected = selectedTimeslotId === slot.id;
                               const adjustedLabel = getAdjustedSlotLabel(slot);
                               const hasDelay = !slot.isInstant && pincodeTimeDelay > 0;
                               return (
-                              <div key={slot.id}>
+                              <div key={slot.id || slot.label || slotIdx}>
                                 <button
                                   type="button"
                                   onClick={() => { setSelectedTimeslotId(slot.id); setTimeslotExpanded(false); }}
