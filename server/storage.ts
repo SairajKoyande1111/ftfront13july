@@ -30,7 +30,7 @@ function toCustomer(doc: any): Customer {
     email: doc.email ?? null,
     dateOfBirth: doc.dateOfBirth ?? null,
     addresses: (doc.addresses ?? []).map((a: any) => ({
-      id: a._id.toString(),
+      id: a._id?.toString() ?? "",
       name: a.name ?? "",
       phone: a.phone ?? "",
       building: a.building ?? "",
@@ -195,7 +195,7 @@ export class MongoStorage implements IStorage {
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
       { $set: { ...rest, updatedAt: new Date() }, $setOnInsert: { createdAt: new Date(), addresses: [], orders: [] } },
-      { new: true, upsert: true }
+      { returnDocument: "after", upsert: true }
     ).lean();
     return toCustomer(doc);
   }
@@ -204,7 +204,7 @@ export class MongoStorage implements IStorage {
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
       { $set: { ...updates, updatedAt: new Date() } },
-      { new: true }
+      { returnDocument: "after" }
     ).lean();
     return doc ? toCustomer(doc) : undefined;
   }
@@ -213,7 +213,7 @@ export class MongoStorage implements IStorage {
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
       { $push: { addresses: address }, $set: { updatedAt: new Date() } },
-      { new: true }
+      { returnDocument: "after" }
     ).lean();
     return doc ? toCustomer(doc) : undefined;
   }
@@ -226,7 +226,7 @@ export class MongoStorage implements IStorage {
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone, "addresses._id": addrId },
       { $set: setFields },
-      { new: true }
+      { returnDocument: "after" }
     ).lean();
     return doc ? toCustomer(doc) : undefined;
   }
@@ -235,7 +235,7 @@ export class MongoStorage implements IStorage {
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
       { $pull: { addresses: { _id: addrId } }, $set: { updatedAt: new Date() } },
-      { new: true }
+      { returnDocument: "after" }
     ).lean();
     return doc ? toCustomer(doc) : undefined;
   }

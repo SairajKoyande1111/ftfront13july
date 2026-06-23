@@ -1,0 +1,55 @@
+chunk-LPF6KSF2.js?v=624058b3:21609 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+CustomerContext.tsx:29  GET https://ac04d537-1ee4-4d75-9880-4af98a53349c-00-u2owuhthwq8a.pike.replit.dev/api/customer/me 401 (Unauthorized)
+(anonymous) @ CustomerContext.tsx:29
+fetchFn @ @tanstack_react-query.js?v=624058b3:812
+run @ @tanstack_react-query.js?v=624058b3:477
+start @ @tanstack_react-query.js?v=624058b3:518
+fetch @ @tanstack_react-query.js?v=624058b3:893
+#executeFetch @ @tanstack_react-query.js?v=624058b3:1963
+onSubscribe @ @tanstack_react-query.js?v=624058b3:1840
+subscribe @ @tanstack_react-query.js?v=624058b3:19
+(anonymous) @ @tanstack_react-query.js?v=624058b3:2962
+subscribeToStore @ chunk-LPF6KSF2.js?v=624058b3:12032
+commitHookEffectListMount @ chunk-LPF6KSF2.js?v=624058b3:16963
+commitPassiveMountOnFiber @ chunk-LPF6KSF2.js?v=624058b3:18206
+commitPassiveMountEffects_complete @ chunk-LPF6KSF2.js?v=624058b3:18179
+commitPassiveMountEffects_begin @ chunk-LPF6KSF2.js?v=624058b3:18169
+commitPassiveMountEffects @ chunk-LPF6KSF2.js?v=624058b3:18159
+flushPassiveEffectsImpl @ chunk-LPF6KSF2.js?v=624058b3:19543
+flushPassiveEffects @ chunk-LPF6KSF2.js?v=624058b3:19500
+performSyncWorkOnRoot @ chunk-LPF6KSF2.js?v=624058b3:18921
+flushSyncCallbacks @ chunk-LPF6KSF2.js?v=624058b3:9166
+commitRootImpl @ chunk-LPF6KSF2.js?v=624058b3:19485
+commitRoot @ chunk-LPF6KSF2.js?v=624058b3:19330
+finishConcurrentRender @ chunk-LPF6KSF2.js?v=624058b3:18858
+performConcurrentWorkOnRoot @ chunk-LPF6KSF2.js?v=624058b3:18768
+workLoop @ chunk-LPF6KSF2.js?v=624058b3:197
+flushWork @ chunk-LPF6KSF2.js?v=624058b3:176
+performWorkUntilDeadline @ chunk-LPF6KSF2.js?v=624058b3:384
+postMessage
+schedulePerformWorkUntilDeadline @ chunk-LPF6KSF2.js?v=624058b3:407
+requestHostCallback @ chunk-LPF6KSF2.js?v=624058b3:418
+unstable_scheduleCallback @ chunk-LPF6KSF2.js?v=624058b3:330
+scheduleCallback$1 @ chunk-LPF6KSF2.js?v=624058b3:19879
+ensureRootIsScheduled @ chunk-LPF6KSF2.js?v=624058b3:18702
+scheduleUpdateOnFiber @ chunk-LPF6KSF2.js?v=624058b3:18612
+updateContainer @ chunk-LPF6KSF2.js?v=624058b3:20834
+ReactDOMHydrationRoot.render.ReactDOMRoot.render @ chunk-LPF6KSF2.js?v=624058b3:21174
+(anonymous) @ main.tsx:5
+OtpModal.tsx:175  POST https://ac04d537-1ee4-4d75-9880-4af98a53349c-00-u2owuhthwq8a.pike.replit.dev/api/customer/verify-otp 500 (Internal Server Error)
+(anonymous) @ OtpModal.tsx:175
+callCallback2 @ chunk-LPF6KSF2.js?v=624058b3:3680
+invokeGuardedCallbackDev @ chunk-LPF6KSF2.js?v=624058b3:3705
+invokeGuardedCallback @ chunk-LPF6KSF2.js?v=624058b3:3739
+invokeGuardedCallbackAndCatchFirstError @ chunk-LPF6KSF2.js?v=624058b3:3742
+executeDispatch @ chunk-LPF6KSF2.js?v=624058b3:7046
+processDispatchQueueItemsInOrder @ chunk-LPF6KSF2.js?v=624058b3:7066
+processDispatchQueue @ chunk-LPF6KSF2.js?v=624058b3:7075
+dispatchEventsForPlugins @ chunk-LPF6KSF2.js?v=624058b3:7083
+(anonymous) @ chunk-LPF6KSF2.js?v=624058b3:7206
+batchedUpdates$1 @ chunk-LPF6KSF2.js?v=624058b3:18966
+batchedUpdates @ chunk-LPF6KSF2.js?v=624058b3:3585
+dispatchEventForPluginEventSystem @ chunk-LPF6KSF2.js?v=624058b3:7205
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-LPF6KSF2.js?v=624058b3:5484
+dispatchEvent @ chunk-LPF6KSF2.js?v=624058b3:5478
+dispatchDiscreteEvent @ chunk-LPF6KSF2.js?v=624058b3:5455
