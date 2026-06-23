@@ -29,8 +29,8 @@ function toCustomer(doc: any): Customer {
     name: doc.name ?? null,
     email: doc.email ?? null,
     dateOfBirth: doc.dateOfBirth ?? null,
-    addresses: (doc.addresses ?? []).map((a: any) => ({
-      id: a._id?.toString() ?? "",
+    addresses: (doc.addresses ?? []).map((a: any, idx: number) => ({
+      id: a._id?.toString() || [a.building, a.area, a.pincode, a.phone, idx].filter(Boolean).join("|"),
       name: a.name ?? "",
       phone: a.phone ?? "",
       building: a.building ?? "",
@@ -210,9 +210,10 @@ export class MongoStorage implements IStorage {
   }
 
   async addCustomerAddress(phone: string, address: Omit<CustomerAddress, "id">): Promise<Customer | undefined> {
+    const mongoose = await import("mongoose");
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
-      { $push: { addresses: address }, $set: { updatedAt: new Date() } },
+      { $push: { addresses: { _id: new mongoose.Types.ObjectId(), ...address } }, $set: { updatedAt: new Date() } },
       { returnDocument: "after" }
     ).lean();
     return doc ? toCustomer(doc) : undefined;
