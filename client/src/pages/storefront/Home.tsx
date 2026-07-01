@@ -300,12 +300,12 @@ export default function Home() {
 
         {/* Category Row */}
         <div className="mb-6">
-          <DragScrollDiv className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-normal">
+          <DragScrollDiv className="flex overflow-x-auto gap-6 scrollbar-hide">
             {categories.map((cat) => (
               <button
                 key={cat.name}
                 onClick={() => handleCategoryClick(cat.name)}
-                className="flex-none flex flex-col items-center gap-2 snap-start group"
+                className="flex-none flex flex-col items-center gap-2 group"
                 data-testid={`category-${cat.name.toLowerCase().replace(/\s+/g, '-')}`}
               >
                 <div className="w-28 h-28 sm:w-32 sm:h-32 overflow-hidden transition-all duration-300 group-hover:scale-105">
@@ -353,7 +353,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground py-4">No combos available yet.</p>
                 ) : (
                   <>
-                    <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-5 scrollbar-hide snap-x snap-normal pb-2">
+                    <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-5 scrollbar-hide pb-2">
                       {availableCombos.map(combo => {
                         const comboImages = combo.includes
                           .map(inc => {
@@ -366,7 +366,7 @@ export default function Home() {
                           : 0;
                         const showPct = combo.discount && combo.discount > 0 ? combo.discount : computedPct;
                         return (
-                          <div key={combo.id} className="w-[340px] sm:w-[400px] flex-none snap-start">
+                          <div key={combo.id} className="w-[340px] sm:w-[400px] flex-none">
                             <div className="group relative bg-card flex flex-col h-full transition-all duration-300 cursor-pointer">
                               <Link href={`/combo/${combo.id}`}>
                                 <div className="relative aspect-[10/7] w-full bg-muted/30 overflow-hidden mb-3 border border-border/20 rounded-xl">
@@ -494,12 +494,12 @@ export default function Home() {
                   {section.title}
                 </h2>
               </div>
-              <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide snap-x snap-normal">
+              <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
                 {isLoading
                   ? [1,2,3,4,5,6].map(i => <Skeleton key={i} className="min-w-[240px] sm:min-w-[280px] h-[340px] sm:h-[380px] rounded-3xl" />)
                   : sectionProducts.length > 0
                     ? sectionProducts.map(product => (
-                        <div key={product.id} className="w-[240px] sm:w-[280px] flex-none snap-start">
+                        <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
                           <ProductCard product={product} />
                         </div>
                       ))

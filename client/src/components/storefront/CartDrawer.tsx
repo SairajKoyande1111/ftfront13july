@@ -792,10 +792,11 @@ export function CartDrawer() {
         },
         modal: {
           ondismiss: () => {
-            // Suppress if payment already succeeded OR if we're mid-check after returning from a UPI app
+            // Suppress if payment already succeeded OR if we're actively polling after returning from a UPI app
             if (paymentSucceededRef.current || returningFromUpiRef.current) return;
-            // Also suppress if there's still a pending UPI order — visibilitychange will handle it
-            if (pendingRzpOrderIdRef.current) return;
+            // User closed the modal — treat as cancellation and reset state
+            pendingRzpOrderIdRef.current = null;
+            pendingSelectedAddressRef.current = null;
             setIsProcessingPayment(false);
             setIsCartOpen(true);
             toast({ title: "Payment cancelled", variant: "destructive" });

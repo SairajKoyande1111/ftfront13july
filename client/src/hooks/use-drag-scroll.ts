@@ -7,23 +7,31 @@ export function useDragScroll<T extends HTMLElement>() {
   const scrollLeft = useRef(0);
   const hasDragged = useRef(false);
 
-  // Momentum for wheel scroll
   const velocity = useRef(0);
   const rafId = useRef<number | null>(null);
 
-  // ── Wheel: convert vertical scroll to smooth horizontal ──────────────────
+  // ── Wheel: horizontal scroll on desktop mouse, but let page scroll when row is at boundary ──
   const onWheel = useCallback((e: WheelEvent) => {
     const el = ref.current;
     if (!el) return;
     if (el.scrollWidth <= el.clientWidth) return;
+
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+    // At left boundary scrolling further left → let page handle it
+    const atStart = el.scrollLeft <= 0;
+    // At right boundary scrolling further right → let page handle it
+    const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 1;
+    if ((atStart && delta < 0) || (atEnd && delta > 0)) return;
+
     e.preventDefault();
-    const delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
     velocity.current += delta;
     if (rafId.current !== null) cancelAnimationFrame(rafId.current);
+
     const step = () => {
       if (!ref.current) return;
-      ref.current.scrollLeft += velocity.current * 0.12;
-      velocity.current *= 0.82;
+      ref.current.scrollLeft += velocity.current * 0.14;
+      velocity.current *= 0.78;
       if (Math.abs(velocity.current) > 0.5) {
         rafId.current = requestAnimationFrame(step);
       } else {
@@ -34,7 +42,7 @@ export function useDragScroll<T extends HTMLElement>() {
     rafId.current = requestAnimationFrame(step);
   }, []);
 
-  // ── Drag: mousemove/mouseup on document so fast drags don't break ────────
+  // ── Drag: attach to document so fast swipes don't stop at element edge ───
   const onMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging.current) return;
     const el = ref.current;
@@ -61,7 +69,6 @@ export function useDragScroll<T extends HTMLElement>() {
   const onMouseDown = useCallback((e: MouseEvent) => {
     const el = ref.current;
     if (!el) return;
-    // Cancel any ongoing momentum
     if (rafId.current !== null) {
       cancelAnimationFrame(rafId.current);
       rafId.current = null;
@@ -73,7 +80,6 @@ export function useDragScroll<T extends HTMLElement>() {
     scrollLeft.current = el.scrollLeft;
     el.style.cursor = "grabbing";
     el.style.userSelect = "none";
-    // Attach to document so drag works even when mouse leaves the element
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
   }, [onMouseMove, onMouseUp]);
