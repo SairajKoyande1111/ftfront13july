@@ -4,6 +4,7 @@ import { Header } from "@/components/storefront/Header";
 import { ProductCard } from "@/components/storefront/ProductCard";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
 import { SwipeHint } from "@/components/storefront/SwipeHint";
+import { DragScrollDiv } from "@/components/storefront/DragScrollDiv";
 import { Footer } from "@/components/storefront/Footer";
 import { useProducts } from "@/hooks/use-products";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,7 +72,6 @@ export default function Home() {
     if (initialQ) setView("category");
   }, [initialQ]);
 
-  const catScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const hasVisited = localStorage.getItem("fishtokri_visited");
@@ -300,10 +300,7 @@ export default function Home() {
 
         {/* Category Row */}
         <div className="mb-6">
-          <div
-            ref={catScrollRef}
-            className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-mandatory"
-          >
+          <DragScrollDiv className="flex overflow-x-auto gap-6 scrollbar-hide snap-x snap-mandatory">
             {categories.map((cat) => (
               <button
                 key={cat.name}
@@ -331,7 +328,7 @@ export default function Home() {
                 </span>
               </button>
             ))}
-          </div>
+          </DragScrollDiv>
           <SwipeHint />
         </div>
 
@@ -356,7 +353,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground py-4">No combos available yet.</p>
                 ) : (
                   <>
-                    <div className="flex overflow-x-auto gap-4 sm:gap-5 scrollbar-hide snap-x pb-2">
+                    <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-5 scrollbar-hide snap-x pb-2">
                       {availableCombos.map(combo => {
                         const comboImages = combo.includes
                           .map(inc => {
@@ -480,7 +477,7 @@ export default function Home() {
                           </div>
                         );
                       })}
-                    </div>
+                    </DragScrollDiv>
                     <SwipeHint />
                   </>
                 )}
@@ -497,7 +494,7 @@ export default function Home() {
                   {section.title}
                 </h2>
               </div>
-              <div className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide snap-x">
+              <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide snap-x">
                 {isLoading
                   ? [1,2,3,4,5,6].map(i => <Skeleton key={i} className="min-w-[240px] sm:min-w-[280px] h-[340px] sm:h-[380px] rounded-3xl" />)
                   : sectionProducts.length > 0
@@ -510,7 +507,7 @@ export default function Home() {
                         <p className="text-sm text-muted-foreground py-4">No products in this section yet.</p>
                       )
                 }
-              </div>
+              </DragScrollDiv>
               {sectionProducts.length > 0 && <SwipeHint />}
             </section>
           );
