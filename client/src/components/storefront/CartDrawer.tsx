@@ -165,8 +165,18 @@ export function CartDrawer() {
 
   const isCouponExhausted = (c: Coupon) => !!customer && !!(userCouponUsage[c.code]?.isExhausted);
   const isCouponApplicable = (c: Coupon) => c.isActive && c.minOrderAmount <= totalPrice && !isCouponExhausted(c);
-  // Hide exhausted coupons entirely from the list
-  const visibleCartCoupons = cartCoupons.filter(c => !isCouponExhausted(c));
+
+  // A coupon is visible to this customer if:
+  // - applicableCustomers is empty (open to all), OR
+  // - the logged-in customer's id is in the list
+  const isCouponVisibleToCustomer = (c: Coupon) => {
+    if (!c.applicableCustomers || c.applicableCustomers.length === 0) return true;
+    if (!customer) return false;
+    return c.applicableCustomers.includes(customer.id);
+  };
+
+  // Hide exhausted coupons and coupons not targeted at this customer
+  const visibleCartCoupons = cartCoupons.filter(c => !isCouponExhausted(c) && isCouponVisibleToCustomer(c));
 
   const validateCouponViaApi = async (code: string): Promise<{ valid: boolean; message: string }> => {
     const res = await fetch("/api/coupon/apply", {

@@ -275,6 +275,8 @@ export async function registerRoutes(
     isFirstTimeOnly: doc.isFirstTimeOnly ?? false,
     isActive: doc.isActive ?? true, applicableCategories: doc.applicableCategories ?? [],
     expiresAt: doc.expiresAt ?? null, color: doc.color ?? "",
+    visibleOnWebsite: doc.visibleOnWebsite ?? true,
+    applicableCustomers: (doc.applicableCustomers ?? []).map((id: any) => id.toString()),
     createdAt: doc.createdAt, updatedAt: doc.updatedAt,
   });
   const toSection = (doc: any) => ({

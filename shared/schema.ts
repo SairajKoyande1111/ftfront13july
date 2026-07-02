@@ -38,6 +38,8 @@ export type Coupon = {
   applicableCategories: string[];
   expiresAt: Date | null;
   color: string;
+  visibleOnWebsite: boolean;
+  applicableCustomers: string[];
   createdAt: Date;
   updatedAt: Date;
 };

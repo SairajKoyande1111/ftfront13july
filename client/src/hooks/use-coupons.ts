@@ -18,6 +18,7 @@ export function useCoupons() {
 
 export function useProductCoupons(productId: string | null | undefined, couponIds: string[]) {
   const { data: allCoupons, isLoading } = useCoupons();
-  const coupons = allCoupons?.filter((c) => couponIds.includes(c.id)) ?? [];
+  // Only show coupons that are assigned to this product AND have visibleOnWebsite: true
+  const coupons = allCoupons?.filter((c) => couponIds.includes(c.id) && c.visibleOnWebsite !== false) ?? [];
   return { coupons, isLoading };
 }
