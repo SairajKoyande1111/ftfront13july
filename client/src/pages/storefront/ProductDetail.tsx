@@ -401,7 +401,7 @@ export default function ProductDetail() {
                     {product.netWeight && (
                       <span className="whitespace-nowrap">
                         {product.netWeight}
-                        <span className="font-normal ml-0.5">gm net</span>
+                        <span className="font-normal ml-0.5"> gm net</span>
                       </span>
                     )}
                   </div>

@@ -110,7 +110,7 @@ export function ProductCard({ product }: { product: Product }) {
             </>
           )}
           {product.netWeight && (
-            <span className="font-medium text-foreground/80 whitespace-nowrap">{product.netWeight}gm net</span>
+            <span className="font-medium text-foreground/80 whitespace-nowrap">{product.netWeight} gm net</span>
           )}
         </div>
 
