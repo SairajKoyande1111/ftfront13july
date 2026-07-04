@@ -337,9 +337,6 @@ export default function ProductDetail() {
                 />
                 <span className="text-sm sm:text-lg font-semibold leading-tight">
                   {product.pieces || dummy.pieces}
-                  {product.pieces && !product.pieces.toLowerCase().includes("piece") && (
-                    <span className="text-xs sm:text-sm font-normal ml-1">Pieces</span>
-                  )}
                 </span>
               </div>
 
@@ -392,7 +389,7 @@ export default function ProductDetail() {
                     {product.grossWeight && (
                       <span>
                         {product.grossWeight}
-                        <span className="font-normal ml-0.5">gross</span>
+                        <span className="font-normal ml-0.5">gm gross</span>
                       </span>
                     )}
                     {product.grossWeight && product.netWeight && (
@@ -401,7 +398,7 @@ export default function ProductDetail() {
                     {product.netWeight && (
                       <span>
                         {product.netWeight}
-                        <span className="font-normal ml-0.5">net</span>
+                        <span className="font-normal ml-0.5">gm net</span>
                       </span>
                     )}
                   </div>
