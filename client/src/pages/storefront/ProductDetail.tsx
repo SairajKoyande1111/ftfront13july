@@ -318,9 +318,10 @@ export default function ProductDetail() {
             {/* Description */}
             <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">{product.description || dummy.description}</p>
 
-            {/* Pieces / Serves / Weight — single row; weight stacks gross/net on mobile, inline on desktop */}
-            <div className="flex items-center justify-between sm:justify-start gap-x-3 sm:gap-x-5 py-1 text-black dark:text-white whitespace-nowrap">
-              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 py-1 text-black dark:text-white">
+              {/* Pieces */}
+              <div className="flex items-center gap-2 shrink-0">
                 <span
                   aria-hidden
                   className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
@@ -335,14 +336,15 @@ export default function ProductDetail() {
                     maskPosition: "center",
                   }}
                 />
-                <span className="text-sm sm:text-lg font-semibold leading-tight">
+                <span className="text-sm sm:text-lg font-semibold leading-tight whitespace-nowrap">
                   {product.pieces || dummy.pieces}
                 </span>
               </div>
 
               <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
 
-              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+              {/* Serves */}
+              <div className="flex items-center gap-2 shrink-0">
                 <span
                   aria-hidden
                   className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
@@ -357,7 +359,7 @@ export default function ProductDetail() {
                     maskPosition: "center",
                   }}
                 />
-                <span className="text-sm sm:text-lg font-semibold leading-tight">
+                <span className="text-sm sm:text-lg font-semibold leading-tight whitespace-nowrap">
                   {product.serves || dummy.serves}
                   {product.serves && !product.serves.toLowerCase().includes("serv") && (
                     <span className="text-xs sm:text-sm font-normal ml-1">Serving</span>
@@ -369,8 +371,9 @@ export default function ProductDetail() {
                 <span aria-hidden className="block w-px h-6 sm:h-7 bg-black/70 dark:bg-white/70 shrink-0" />
               )}
 
+              {/* Weight */}
               {(product.grossWeight || product.netWeight) && (
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <span
                     aria-hidden
                     className="w-6 h-6 sm:w-7 sm:h-7 inline-block shrink-0 bg-black dark:bg-white"
@@ -385,18 +388,18 @@ export default function ProductDetail() {
                       maskPosition: "center",
                     }}
                   />
-                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1 leading-tight text-sm sm:text-lg font-semibold">
+                  <div className="flex flex-row flex-wrap items-baseline gap-x-1 leading-tight text-sm sm:text-lg font-semibold">
                     {product.grossWeight && (
-                      <span>
+                      <span className="whitespace-nowrap">
                         {product.grossWeight}
                         <span className="font-normal ml-0.5">gm gross</span>
                       </span>
                     )}
                     {product.grossWeight && product.netWeight && (
-                      <span className="hidden sm:inline font-normal opacity-50">/</span>
+                      <span className="font-normal opacity-50">/</span>
                     )}
                     {product.netWeight && (
-                      <span>
+                      <span className="whitespace-nowrap">
                         {product.netWeight}
                         <span className="font-normal ml-0.5">gm net</span>
                       </span>
