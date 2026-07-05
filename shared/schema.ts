@@ -421,12 +421,12 @@ export type UpdateCustomer = {
 };
 
 export const insertCustomerAddressSchema = z.object({
-  name: z.string().optional().default(""),
-  phone: z.string().optional().default(""),
-  building: z.string().optional().default(""),
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(1, "Phone is required"),
+  building: z.string().min(1, "Building is required"),
   street: z.string().optional().default(""),
   area: z.string().min(1, "Area is required"),
-  pincode: z.string().optional().default(""),
+  pincode: z.string().regex(/^\d{6}$/, "A valid 6-digit pincode is required"),
   type: z.enum(["house", "office", "other"]).optional().default("house"),
   label: z.string().optional().default("Home"),
   instructions: z.string().optional().default(""),

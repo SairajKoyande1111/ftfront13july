@@ -1006,7 +1006,7 @@ export default function Profile() {
   };
 
   const saveAddress = () => {
-    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area) {
+    if (!addressForm.name || !addressForm.phone || !addressForm.building || !addressForm.area || !addressForm.pincode) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
@@ -1014,7 +1014,11 @@ export default function Profile() {
       toast({ title: "Enter a valid 10-digit mobile number", variant: "destructive" });
       return;
     }
-    if (addressForm.pincode.length === 6 && !checkPincodeServiceability(addressForm.pincode)) {
+    if (!/^\d{6}$/.test(addressForm.pincode)) {
+      toast({ title: "Please enter a valid 6-digit pincode", variant: "destructive" });
+      return;
+    }
+    if (!checkPincodeServiceability(addressForm.pincode)) {
       setUnserviceablePincode(addressForm.pincode);
       setShowUnserviceablePopup(true);
       return;
@@ -1270,7 +1274,7 @@ export default function Profile() {
                     </Button>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Pincode</Label>
+                    <Label className="text-xs text-muted-foreground">Pincode *</Label>
                     <input
                       type="tel"
                       inputMode="numeric"
