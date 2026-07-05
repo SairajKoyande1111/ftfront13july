@@ -297,7 +297,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
   const deliveryFee = isInstant ? 0 : slotCharge;
 
   const payments: Array<{ mode: string; amount: number }> = (order as any).payments ?? [];
-  const walletPaid = payments.filter(p => p.mode === "wallet").reduce((s, p) => s + (p.amount ?? 0), 0);
+  const walletPaid = payments.filter(p => p.mode === "wallet").reduce((s, p) => s + (Number.isFinite(p.amount) ? p.amount : 0), 0);
 
   const modes = payments.length > 0 ? [...new Set(payments.map(p => p.mode))] : [(order as any).paymentMethod ?? "cash"];
   const paymentMethod = (modes as string[]).map(m => m === "wallet" ? "Wallet Balance" : m === "upi" ? "UPI" : "Cash on Delivery").join(" + ");
@@ -407,7 +407,7 @@ function downloadInvoicePDF(order: OrderRequest, items: OrderItem[], subtotal: n
     ${couponDiscount > 0 ? `<div class="t-row discount"><span>Coupon Discount${couponCode ? ` (${couponCode})` : ''}</span><span>−₹${couponDiscount.toLocaleString()}</span></div>` : ''}
     ${extraDiscount > 0 ? `<div class="t-row discount"><span>Extra Discount</span><span>−₹${extraDiscount.toLocaleString()}</span></div>` : ''}
     ${walletPaid > 0 ? `<div class="t-row wallet"><span>Wallet Balance Used</span><span>−₹${walletPaid.toLocaleString()}</span></div>` : ''}
-    <div class="t-row grand-total"><span>Total</span><span>₹${total.toLocaleString()}</span></div>
+    <div class="t-row grand-total"><span>Total</span><span>₹${Math.max(0, total - walletPaid).toLocaleString()}</span></div>
   </div>
 
   <hr class="divider"/>
@@ -630,7 +630,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
 
             {(() => {
               const orderPayments: Array<{ mode: string; amount: number }> = (order as any).payments ?? [];
-              const walletPaidAmt = orderPayments.filter(p => p.mode === "wallet").reduce((s, p) => s + (p.amount ?? 0), 0);
+              const walletPaidAmt = orderPayments.filter(p => p.mode === "wallet").reduce((s, p) => s + (Number.isFinite(p.amount) ? p.amount : 0), 0);
               const paymentStatusVal = (order as any).paymentStatus ?? "unpaid";
               const isPaidVal = paymentStatusVal === "paid";
               const isPartialVal = paymentStatusVal === "partial";
@@ -673,7 +673,7 @@ function OrderCard({ order, productImageMap }: { order: OrderRequest; productIma
                       </div>
                     )}
                     <div className="flex justify-between text-sm font-bold text-foreground pt-2 border-t border-slate-200">
-                      <span>Total</span><span>₹{total.toLocaleString()}</span>
+                      <span>Total</span><span>₹{Math.max(0, total - walletPaidAmt).toLocaleString()}</span>
                     </div>
                     {order.timeslotLabel && (
                       <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-100">
