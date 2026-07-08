@@ -56,14 +56,26 @@ Per-hub collections include: products, sections, carousel, categories, combos, a
 ## Environment Variables
 
 - `MONGODB_URI` — MongoDB connection string (required, set as a secret)
-- `SESSION_SECRET` — Express session secret (recommended for production)
+- `SESSION_SECRET` — Express session secret (required — `server/auth.ts` reads it as `process.env.SESSION_SECRET!`; missing it breaks session setup at boot)
+- `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` — Razorpay payment credentials (secrets)
+- `VITE_RAZORPAY_KEY_ID` — Razorpay publishable key exposed to the client bundle (shared env var, not a secret — same key as `RAZORPAY_KEY_ID`)
+- `VITE_GOOGLE_MAPS_API_KEY` — Google Maps key exposed to the client bundle (shared env var, restricted by domain, not a secret)
+- `ADMARK_API_KEY` / `ADMARK_PHONE_NUMBER_ID` — WhatsApp/messaging credentials (secrets)
 - `PORT` — Server port (defaults to 5000)
+
+Note: this project previously had live credentials committed in plaintext inside `.replit` (`[userenv.shared]`). They have been removed from that file and replaced with proper Replit Secrets / env vars. Because those values were exposed in git history, consider rotating the MongoDB password and Razorpay/Admark/AiSensy keys.
 
 ## Running the App
 
-- **Development**: `npm run dev` — starts the Express server with Vite middleware
+- **Development**: `npm run dev` — starts the Express server with Vite middleware (bound to the "Start application" workflow)
 - **Build**: `npm run build` — builds the frontend to `dist/public`
 - **Production**: `npm start` — serves the built frontend + API
+
+## Setup Notes (Replit import)
+
+- Dependencies installed via `npm install`; `dev` script requires `node_modules/.bin/tsx`, so always run `npm install` after a fresh clone/import before starting the workflow.
+- Secrets configured: `MONGODB_URI`, `SESSION_SECRET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `ADMARK_API_KEY`, `ADMARK_PHONE_NUMBER_ID`.
+- On boot the server connects to `customers`, `fishtokri_admin`, `orders`, and per-hub DBs (confirmed working against the configured `MONGODB_URI`). The 401s on `/api/auth/me` during initial page load are expected (no session yet), not an error.
 
 ## Key Features
 
