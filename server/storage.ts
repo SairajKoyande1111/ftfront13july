@@ -30,7 +30,13 @@ function toCustomer(doc: any): Customer {
     email: doc.email ?? null,
     dateOfBirth: doc.dateOfBirth ?? null,
     addresses: (doc.addresses ?? []).map((a: any, idx: number) => ({
-      id: a._id?.toString() || [a.building, a.area, a.pincode, a.phone, idx].filter(Boolean).join("|"),
+      // NOTE: every address should have a real Mongo _id (assigned by addCustomerAddress,
+      // or backfilled by the one-time migration for legacy/bulk-imported data — see
+      // scripts/backfill-address-ids.mjs). The composite-key fallback below only exists
+      // as a last resort for data that somehow still lacks an _id; it is inherently
+      // ambiguous (can mismatch when two addresses share the same building/area/pincode)
+      // and must never be relied on as the primary path.
+      id: a._id?.toString() || [a.building, a.area, a.pincode, a.phone, idx].filter((v) => v !== undefined && v !== null && v !== "").join("|"),
       name: a.name ?? "",
       phone: a.phone ?? "",
       building: a.building ?? "",
@@ -241,18 +247,31 @@ export class MongoStorage implements IStorage {
       return doc ? toCustomer(doc) : undefined;
     }
 
-    // Composite key fallback: building|area|pincode|phone|idx
+    // Composite key fallback for legacy addresses that somehow still lack a real _id
+    // (should be rare after the one-time backfill migration). Self-heals by assigning
+    // a real _id at the same time, so this ambiguous path is only ever hit once per address.
     const parts = addrId.split("|");
     const [building, area, pincode] = parts;
     const customer = await CustomerDbModel.findOne({ phone }).lean() as any;
     if (!customer) return undefined;
-    const addrIndex = (customer.addresses as any[]).findIndex((a: any) =>
-      String(a.building).trim() === String(building).trim() &&
-      String(a.area).trim() === String(area).trim() &&
-      (!pincode || String(a.pincode).trim() === String(pincode).trim())
-    );
-    if (addrIndex === -1) return undefined;
+    const matches = (customer.addresses as any[])
+      .map((a: any, i: number) => ({ a, i }))
+      .filter(({ a }: any) =>
+        String(a.building).trim() === String(building).trim() &&
+        String(a.area).trim() === String(area).trim() &&
+        (!pincode || String(a.pincode).trim() === String(pincode).trim())
+      );
+    if (matches.length === 0) return undefined;
+    if (matches.length > 1) {
+      console.warn(
+        `[updateCustomerAddress] Ambiguous composite match for phone=${phone}: ${matches.length} addresses share building/area/pincode. Updating the first match; consider backfilling _id for this customer.`
+      );
+    }
+    const addrIndex = matches[0].i;
     const setByIndex: Record<string, any> = { updatedAt: new Date() };
+    if (!matches[0].a._id) {
+      setByIndex[`addresses.${addrIndex}._id`] = new mongoose.Types.ObjectId();
+    }
     for (const [k, v] of Object.entries(updates)) {
       setByIndex[`addresses.${addrIndex}.${k}`] = v;
     }
@@ -277,24 +296,40 @@ export class MongoStorage implements IStorage {
       return doc ? toCustomer(doc) : undefined;
     }
 
-    // Composite key fallback: building|area|pincode|phone|idx
-    // Use $pull with type-flexible pincode match (old docs may store pincode as number)
+    // Composite key fallback for legacy addresses that somehow still lack a real _id
+    // (should be rare after the one-time backfill migration). Resolves to a single
+    // array index in-memory (same disambiguation as updateCustomerAddress) instead of
+    // a broad $pull match, so it can never silently delete the wrong or multiple addresses.
     const [building, area, pincode] = addrId.split("|");
-    const pullMatch: Record<string, any> = {};
-    if (building) pullMatch.building = building.trim();
-    if (area) pullMatch.area = area.trim();
-    if (pincode) {
-      const pincodeNum = Number(pincode);
-      pullMatch.pincode = isNaN(pincodeNum)
-        ? pincode.trim()
-        : { $in: [pincode.trim(), pincodeNum] };
+    const customer = await CustomerDbModel.findOne({ phone }).lean() as any;
+    if (!customer) return undefined;
+    const matches = (customer.addresses as any[])
+      .map((a: any, i: number) => ({ a, i }))
+      .filter(({ a }: any) =>
+        String(a.building).trim() === String(building).trim() &&
+        String(a.area).trim() === String(area).trim() &&
+        (!pincode || String(a.pincode).trim() === String(pincode).trim())
+      );
+    if (matches.length === 0) return undefined;
+    if (matches.length > 1) {
+      console.warn(
+        `[deleteCustomerAddress] Ambiguous composite match for phone=${phone}: ${matches.length} addresses share building/area/pincode. Deleting only the first match.`
+      );
     }
+    const addrIndex = matches[0].i;
     const doc = await CustomerDbModel.findOneAndUpdate(
       { phone },
-      { $pull: { addresses: pullMatch }, $set: { updatedAt: new Date() } },
+      { $unset: { [`addresses.${addrIndex}`]: 1 }, $set: { updatedAt: new Date() } },
       { new: true }
     ).lean();
-    return doc ? toCustomer(doc) : undefined;
+    if (!doc) return undefined;
+    // $unset on an array index leaves a `null` hole; pull it out in a second step.
+    const cleaned = await CustomerDbModel.findOneAndUpdate(
+      { phone },
+      { $pull: { addresses: null as any } },
+      { new: true }
+    ).lean();
+    return cleaned ? toCustomer(cleaned) : toCustomer(doc);
   }
 
   async getAllCustomers(): Promise<Customer[]> {
