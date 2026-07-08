@@ -757,8 +757,50 @@ export async function registerRoutes(
       );
       const subtotal = input.subtotal ?? itemsTotal;
       const discount = input.discount ?? input.discountAmount ?? (resolvedCoupon?.discountAmount ?? 0);
-      const slotCharge = input.slotCharge ?? input.instantDeliveryCharge ?? 0;
-      const total = input.total ?? subtotal - discount + slotCharge;
+      const clientSlotCharge = input.slotCharge ?? input.instantDeliveryCharge ?? 0;
+
+      // Authoritative delivery-charge recomputation: the client derives slotCharge from
+      // in-memory hub/pincode config (via React state that can be stale — e.g. a UPI
+      // payment resumed long after checkout via the visibilitychange listener replays an
+      // old/empty closure). Never trust the client's number outright for a delivery order;
+      // recompute it here from the persisted sub-hub pincode config + timeslot doc and use
+      // that value, only falling back to the client-submitted figure if lookup is impossible
+      // (e.g. pickup/takeaway orders with no hub, or a legacy pincode not in the config yet).
+      let slotCharge = clientSlotCharge;
+      if (input.hubDbName && (input.deliveryType ?? "delivery") === "delivery") {
+        try {
+          const pincode = input.deliveryAddressDetail?.pincode;
+          const subHubForCharge = await SubHubModel.findOne({ dbName: input.hubDbName }).lean() as any;
+          const pincodeConfig = pincode
+            ? (subHubForCharge?.pincodes ?? []).find((p: any) => String(p.pincode).trim() === String(pincode).trim())
+            : null;
+          if (pincodeConfig) {
+            const baseCharge = pincodeConfig.charge ?? 0;
+            let extraCharge = 0;
+            if (input.timeslotId) {
+              try {
+                const hubForTimeslot = await getHubModels(input.hubDbName);
+                const timeslotDoc = await hubForTimeslot.Timeslot.findById(input.timeslotId).lean() as any;
+                if (timeslotDoc?.isInstant) extraCharge = timeslotDoc.extraCharge ?? 0;
+              } catch { /* non-fatal — fall back to base charge only */ }
+            }
+            const authoritativeCharge = baseCharge + extraCharge;
+            if (authoritativeCharge !== clientSlotCharge) {
+              console.warn(
+                `[order:slotCharge] Overriding client-submitted slotCharge=${clientSlotCharge} with authoritative ${authoritativeCharge} (pincode=${pincode}, hub=${input.hubDbName})`
+              );
+            }
+            slotCharge = authoritativeCharge;
+          }
+        } catch (chargeLookupErr) {
+          console.error("Delivery charge validation error:", chargeLookupErr);
+        }
+      }
+
+      // Always derive total from the (possibly corrected) slotCharge above rather than
+      // trusting a client-submitted total, so a stale/incorrect delivery charge can never
+      // silently carry through into the amount actually charged/recorded.
+      const total = subtotal - discount + slotCharge;
 
       // Build coupon arrays
       const couponIds = resolvedCoupon ? [resolvedCoupon.couponId.toString()] : [];
