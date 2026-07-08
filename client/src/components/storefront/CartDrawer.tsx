@@ -706,18 +706,6 @@ export function CartDrawer() {
       toast({ title: "Please select a delivery time slot", variant: "destructive" });
       return;
     }
-    // Guard against placing an order before the hub's pincode/delivery-charge config has
-    // loaded (e.g. a UPI payment resumed long after checkout, when this tab's in-memory
-    // hub data may not have loaded yet). The server independently recomputes and enforces
-    // the correct charge, but blocking here avoids showing the customer a wrong total.
-    if (!selectedSubHub?.pincodes?.length) {
-      toast({ title: "Still loading delivery details, please try again in a moment", variant: "destructive" });
-      return;
-    }
-    if (selected.pincode && !selectedSubHub.pincodes.find(p => p.pincode === selected.pincode)) {
-      toast({ title: "Could not verify delivery charge for this address, please try again", variant: "destructive" });
-      return;
-    }
 
     // Wallet covers entire total — place order directly, no payment method needed
     if (finalTotal === 0) {
