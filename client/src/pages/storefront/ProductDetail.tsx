@@ -316,7 +316,9 @@ export default function ProductDetail() {
             </div>
 
             {/* Description */}
-            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">{product.description || dummy.description}</p>
+            {product.description && (
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">{product.description}</p>
+            )}
 
             {/* Pieces / Serves / Weight — wraps gracefully when text is long */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3 py-1 text-black dark:text-white">
