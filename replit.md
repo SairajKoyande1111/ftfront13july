@@ -74,8 +74,9 @@ Note: this project previously had live credentials committed in plaintext inside
 ## Setup Notes (Replit import)
 
 - Dependencies installed via `npm install`; `dev` script requires `node_modules/.bin/tsx`, so always run `npm install` after a fresh clone/import before starting the workflow.
-- Secrets configured: `MONGODB_URI`, `SESSION_SECRET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `ADMARK_API_KEY`, `ADMARK_PHONE_NUMBER_ID`.
+- Secrets configured: `MONGODB_URI`, `SESSION_SECRET`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `ADMARK_API_KEY`, `ADMARK_PHONE_NUMBER_ID`. Shared env var `VITE_GOOGLE_MAPS_API_KEY` also set.
 - On boot the server connects to `customers`, `fishtokri_admin`, `orders`, and per-hub DBs (confirmed working against the configured `MONGODB_URI`). The 401s on `/api/auth/me` during initial page load are expected (no session yet), not an error.
+- Re-imported and re-verified working (2026-07-10): `npm install` + secrets re-added restored a clean boot; storefront renders correctly with the pincode gate.
 
 ## Key Features
 
