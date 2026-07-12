@@ -128,6 +128,15 @@ export function CartDrawer() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const paymentSucceededRef = useRef(false);
+  // Guards against a duplicate order: Razorpay's own `handler` callback and the
+  // `visibilitychange` UPI-resume poll can BOTH detect the same successful payment
+  // (e.g. the tab regains focus and fires visibilitychange slightly before/after
+  // Razorpay's checkout.js internally confirms the payment and calls `handler`).
+  // Whichever path gets here first synchronously flips this to true; the other
+  // path checks it (with no `await` in between the check and the set, so it's
+  // atomic in JS's single-threaded event loop) and bails out instead of also
+  // calling createOrder for the same payment.
+  const orderClaimedRef = useRef(false);
   // Mobile UPI return refs — store pending Razorpay order so we can poll when user comes back from GPay
   const pendingRzpOrderIdRef = useRef<string | null>(null);
   const pendingSelectedAddressRef = useRef<any>(null);
@@ -793,6 +802,14 @@ export function CartDrawer() {
           email: customer?.email || "",
         },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+          // Claim the order-creation slot atomically (no `await` before this point)
+          // in case the visibilitychange UPI-resume poll already claimed it first.
+          if (orderClaimedRef.current) {
+            console.warn("[checkout] Razorpay handler fired after order already claimed by the UPI-resume flow; skipping duplicate order.");
+            setIsProcessingPayment(false);
+            return;
+          }
+          orderClaimedRef.current = true;
           // Mark as succeeded and clear pending UPI refs so the visibilitychange listener doesn't double-process
           paymentSucceededRef.current = true;
           pendingRzpOrderIdRef.current = null;
@@ -856,6 +873,7 @@ export function CartDrawer() {
       // recover payment completion when the user returns from GPay / PhonePe
       pendingRzpOrderIdRef.current = order_id;
       pendingSelectedAddressRef.current = selected;
+      orderClaimedRef.current = false;
 
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
@@ -916,6 +934,14 @@ export function CartDrawer() {
           return;
         }
 
+        // Claim the order-creation slot atomically (no `await` before this point)
+        // in case Razorpay's own `handler` callback already claimed it first.
+        if (orderClaimedRef.current) {
+          console.warn("[checkout] UPI resume: order already claimed by the Razorpay handler; skipping duplicate order.");
+          returningFromUpiRef.current = false;
+          return;
+        }
+        orderClaimedRef.current = true;
         paymentSucceededRef.current = true;
         pendingRzpOrderIdRef.current = null;
 

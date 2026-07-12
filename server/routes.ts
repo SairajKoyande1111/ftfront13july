@@ -553,6 +553,24 @@ export async function registerRoutes(
     try {
       const input = api.orders.create.input.parse(req.body);
 
+      // ── Pre-flight: payment-reference idempotency check ──────────────────────
+      // Client-side, two things can race and both call this endpoint for the SAME
+      // Razorpay payment: the checkout modal's own `handler` callback, and the
+      // `visibilitychange` UPI-resume poll (both fire when the user returns from
+      // paying in GPay/PhonePe/etc.). If a request arrives whose UPI payment
+      // reference already exists on another order, treat it as a duplicate
+      // submission and return the existing order instead of creating a new one —
+      // this is the server-side safety net in case the client-side guard is ever
+      // bypassed (double network retry, multiple tabs, etc.).
+      const upiReference = (input.payments ?? []).find((p: any) => p.mode === "upi" && p.reference)?.reference;
+      if (upiReference) {
+        const existing = await getOrderModel().findOne({ "payments.reference": upiReference }).lean() as any;
+        if (existing) {
+          console.warn(`[order:dedupe] Duplicate order-create request for razorpay reference=${upiReference} — returning existing order ${existing.orderId ?? existing._id}`);
+          return res.status(200).json({ ...existing, id: String(existing._id) });
+        }
+      }
+
       // ── Pre-flight: coupon usage check (runs BEFORE inventory is touched) ───
       if (input.hubDbName && input.couponCode) {
         try {

@@ -59,3 +59,52 @@ printed.
 Every order that slipped through with ₹0 delivery charge was a real, delivered order
 where the ₹49 (or whatever the configured fee was) never got collected. It's not a
 display bug — it's actual money not charged.
+
+---
+
+# The duplicate-order bug (two orders for one payment) — explained simply
+
+## What was happening
+
+Occasionally, one UPI payment resulted in **two separate orders** being created —
+same customer, same items, same amount, placed in the same minute, back-to-back
+order IDs. It only happened once in a while, not on every UPI order, which again
+points to a race condition (a timing-dependent bug).
+
+## Why it happened
+
+The app has two different ways of noticing "the customer's payment succeeded":
+
+1. **Razorpay's own callback** — when the payment popup/app confirms success, the
+   Razorpay checkout script calls back into our code directly.
+2. **The "welcome back" check** — when a customer pays via a UPI app like GPay and
+   then switches back to our browser tab, the app notices the tab became visible
+   again and asks the server "did this payment actually go through?" If yes, it
+   places the order.
+
+Both of these were written to independently place the order once they detected a
+successful payment. Normally only one of them fires. But occasionally — especially
+right when the customer switches back from their UPI app — **both** can detect
+success within a second of each other. Since neither one checked "wait, did the
+other one already place this order?", both went ahead and created their own order
+for the same payment.
+
+## The fix
+
+Both order-placing code paths now share a single flag that says "someone has
+already claimed this payment." Whichever one notices the successful payment first
+sets that flag immediately; the other one checks the flag right before acting and
+backs off if it's already set. This closes the timing gap client-side.
+
+As a backup, the server itself now also checks: before creating any new order paid
+via UPI, it looks at the UPI payment reference and if an order with that exact
+payment reference already exists, it does **not** create a second one — it just
+returns the existing order. This protects against the same problem even if it
+somehow slipped past the app's own check (e.g. a network retry).
+
+## Why this matters
+
+A duplicate order looks like two paid orders in the system, but the customer was
+only charged once. Left unfixed, this double-counts revenue in reports, ties up
+double the inventory (the fish/meat gets reserved twice), and creates confusing
+duplicate deliveries that need to be manually cleaned up, like the one you deleted.
