@@ -27,6 +27,11 @@ export interface SubHub {
 interface HubContextValue {
   selectedSuperHub: SuperHub | null;
   selectedSubHub: SubHub | null;
+  // True once the hub/pincode config has been loaded at least once (from cache or
+  // network) for the current session. Any code that needs to trust
+  // selectedSubHub.pincodes (e.g. checkout delivery-charge lookup) MUST wait for this
+  // to be true first — see explain.md for why this exists.
+  isHubReady: boolean;
   setHub: (superHub: SuperHub, subHub: SubHub) => void;
   clearHub: () => void;
   isPickerOpen: boolean;
@@ -38,6 +43,7 @@ interface HubContextValue {
 const HubContext = createContext<HubContextValue>({
   selectedSuperHub: null,
   selectedSubHub: null,
+  isHubReady: false,
   setHub: () => {},
   clearHub: () => {},
   isPickerOpen: false,
@@ -77,6 +83,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const [selectedSubHub, setSelectedSubHub] = useState<SubHub | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isPickerRequired, setIsPickerRequired] = useState(false);
+  const [isHubReady, setIsHubReady] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -89,6 +96,9 @@ export function HubProvider({ children }: { children: ReactNode }) {
           setSelectedSuperHub(superHub);
           setSelectedSubHub(subHub);
           setActiveHubDb(subHub.dbName);
+          // Cached pincode config is already usable, so checkout can trust it —
+          // do NOT wait for the background refresh below before flipping this on.
+          setIsHubReady(true);
 
           // Always re-fetch fresh sub-hub data in the background so newly added
           // pincodes, charges, or time delays are picked up without clearing cache
@@ -114,6 +124,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
         setSelectedSuperHub(superHub);
         setSelectedSubHub(subHub);
         setActiveHubDb(subHub.dbName);
+        setIsHubReady(true);
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ superHub, subHub }));
         queryClient.invalidateQueries();
       }
@@ -129,6 +140,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setSelectedSuperHub(superHub);
     setSelectedSubHub(subHub);
     setActiveHubDb(subHub.dbName);
+    setIsHubReady(true);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ superHub, subHub }));
     localStorage.setItem(USER_PICKED_KEY, "1"); // mark user as having explicitly picked
     queryClient.invalidateQueries();
@@ -140,6 +152,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     setSelectedSuperHub(null);
     setSelectedSubHub(null);
     setActiveHubDb(null);
+    setIsHubReady(false);
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(USER_PICKED_KEY);
     queryClient.invalidateQueries();
@@ -147,7 +160,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
 
   return (
     <HubContext.Provider value={{
-      selectedSuperHub, selectedSubHub, setHub, clearHub,
+      selectedSuperHub, selectedSubHub, isHubReady, setHub, clearHub,
       isPickerOpen, isPickerRequired,
       openPicker: () => setIsPickerOpen(true),
       closePicker: () => { if (!isPickerRequired) setIsPickerOpen(false); },

@@ -3,3 +3,4 @@
 - [Expired batch handling](expired-batches.md) — toProduct mapper in routes.ts filters expired batches; if all batches expired → status becomes "unavailable"; combo sections filter these products client-side.
 - [Order schema strips unknown fields](order-schema-zod.md) — new order payload fields MUST be added to insertOrderRequestSchema in shared/schema.ts or Zod silently drops them before the route handler sees them.
 - [.replit userenv secrets exposure](dotreplit-secrets-check.md) — check .replit's [userenv.shared] for committed plaintext credentials during import setup; migrate to Secrets/env vars and rewrite via verifyAndReplaceDotReplit.
+- [Delivery charge checkout race](delivery-charge-race.md) — checkout must gate submit on `isHubReady`; async pincode-config fetch can otherwise let a ₹0 charge slip through.

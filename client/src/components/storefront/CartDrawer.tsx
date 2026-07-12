@@ -120,7 +120,7 @@ export function CartDrawer() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, updateInstruction, totalPrice, clearCart, appliedCoupon, setAppliedCoupon, discountAmount, computeMaxQty } = useCart();
   const { mutate: createOrder, isPending } = useCreateOrder();
   const { customer } = useCustomer();
-  const { selectedSubHub } = useHub();
+  const { selectedSubHub, isHubReady } = useHub();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -619,6 +619,19 @@ export function CartDrawer() {
   };
 
   const buildOrderPayload = (selected: CustomerAddress, razorpayPaymentId?: string) => {
+    // Guard/log per the delivery-charge race investigation (see explain.md): record the
+    // charge we're about to submit alongside the pincode it was computed for, so a $0
+    // charge on a pincode that should have a fee is easy to spot in logs instead of
+    // being discovered later as missing revenue.
+    if (pincodeDeliveryCharge === 0 && selected.pincode) {
+      console.warn(
+        `[checkout] Submitting order with pincodeDeliveryCharge=0 for pincode=${selected.pincode} ` +
+        `(hubReady=${isHubReady}, subHub=${selectedSubHub?.dbName ?? "none"}). ` +
+        `This is expected only if that pincode is genuinely configured with a ₹0 fee.`
+      );
+    } else {
+      console.debug(`[checkout] Computed delivery charge ₹${pincodeDeliveryCharge} for pincode=${selected.pincode}`);
+    }
     const fullAddress = `${selected.building} · ${selected.street}, ${selected.area} · ${selected.pincode}`;
     const orderItems = items.map(i => ({
       productId: i.originalId ?? String(i.id),
@@ -704,6 +717,15 @@ export function CartDrawer() {
     if (!selected) return;
     if (!selectedTimeslot) {
       toast({ title: "Please select a delivery time slot", variant: "destructive" });
+      return;
+    }
+    // Hard guard against the delivery-charge race (see explain.md): never submit a
+    // delivery order before the hub/pincode config has loaded. Without this, a fast tap
+    // right after the app loads (or right after resuming from backgrounding a UPI app)
+    // can build the order payload while pincodeDeliveryCharge is still stuck at its
+    // unresolved default of 0, undercharging a real delivery fee.
+    if (!isHubReady) {
+      toast({ title: "Still loading delivery details, please try again in a moment", variant: "destructive" });
       return;
     }
 
@@ -884,7 +906,16 @@ export function CartDrawer() {
           return; // Payment not complete yet — user may still be in UPI app
         }
 
-        // Payment confirmed server-side — mark as succeeded and place the order
+        // Payment confirmed server-side — mark as succeeded and place the order.
+        // Same guard as placeOrder(): don't build the payload with a possibly-stale/
+        // unresolved delivery charge if the hub/pincode config isn't loaded (e.g. the
+        // app was fully reloaded while the user was away in the UPI app).
+        if (!isHubReady) {
+          console.warn("[checkout] UPI resume: hub config not ready yet, deferring order creation.");
+          returningFromUpiRef.current = false;
+          return;
+        }
+
         paymentSucceededRef.current = true;
         pendingRzpOrderIdRef.current = null;
 
@@ -913,7 +944,7 @@ export function CartDrawer() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [createOrder, buildOrderPayload, clearCart, setIsCartOpen, setUseWallet, toast]);
+  }, [createOrder, buildOrderPayload, clearCart, setIsCartOpen, setUseWallet, toast, isHubReady]);
 
   // Safety net: always clear the cart when the success screen is shown,
   // regardless of whether the mutation onSuccess callback fires.
@@ -1767,11 +1798,13 @@ export function CartDrawer() {
                       </div>
                       <Button
                         onClick={placeOrder}
-                        disabled={isPending || isProcessingPayment || !customer || savedAddresses.length === 0}
+                        disabled={isPending || isProcessingPayment || !customer || savedAddresses.length === 0 || !isHubReady}
                         className="h-12 px-8 !rounded-full font-bold bg-orange-500 text-white hover:bg-orange-600 shadow-lg shadow-orange-500/20 flex items-center gap-2"
                         data-testid="button-place-order"
                       >
-                        {isPending || isProcessingPayment
+                        {!isHubReady
+                          ? <><Loader2 className="w-4 h-4 animate-spin" />Loading delivery details...</>
+                          : isPending || isProcessingPayment
                           ? <><Loader2 className="w-4 h-4 animate-spin" />{paymentMethod === "online" && isProcessingPayment && finalTotal > 0 ? "Opening UPI..." : "Placing..."}</>
                           : <>{paymentMethod === "online" && finalTotal > 0 ? "Pay via UPI" : "Place Order"} <ChevronRight className="w-4 h-4" /></>
                         }

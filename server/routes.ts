@@ -774,6 +774,16 @@ export async function registerRoutes(
           const pincodeConfig = pincode
             ? (subHubForCharge?.pincodes ?? []).find((p: any) => String(p.pincode).trim() === String(pincode).trim())
             : null;
+          if (!pincodeConfig) {
+            // No authoritative config found (unknown pincode, hub/dbName mismatch, or missing
+            // pincode on the order) — we silently keep the client-submitted slotCharge below.
+            // Log it loudly so a $0 charge slipping through is visible in server logs
+            // immediately rather than being discovered later as missing revenue.
+            console.warn(
+              `[order:slotCharge] No pincode config match — keeping client-submitted slotCharge=${clientSlotCharge} ` +
+              `(pincode=${pincode}, hub=${input.hubDbName}, foundSubHub=${!!subHubForCharge})`
+            );
+          }
           if (pincodeConfig) {
             const baseCharge = pincodeConfig.charge ?? 0;
             let extraCharge = 0;
