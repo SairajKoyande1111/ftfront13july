@@ -838,6 +838,12 @@ export async function registerRoutes(
       // Derive paymentMode
       const paymentMode = input.paymentMode ?? (input.paymentMethod === "upi" ? "upi" : "cash");
 
+      // Extract UPI transaction ID (Razorpay payment ID) from the payments array.
+      // Set on all UPI-paid orders so the admin panel can find it at the top level
+      // without digging into the payments array.
+      const upiTransactionId =
+        (input.payments ?? []).find((p: any) => p.mode === "upi" && p.reference)?.reference ?? null;
+
       // Today's date for deliveryDate fallback
       const now2 = new Date();
       const deliveryDate = input.deliveryDate ??
@@ -919,6 +925,7 @@ export async function registerRoutes(
         timeslotLabel: input.timeslotLabel ?? null,
         timeslotStart: input.timeslotStart ?? null,
         timeslotEnd: input.timeslotEnd ?? null,
+        upiTransactionId,
       };
 
       const order = await storage.createOrderRequest(orderInput);
