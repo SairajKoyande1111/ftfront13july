@@ -69,7 +69,6 @@ const orderSchema = new mongoose.Schema(
     timeslotStart: { type: String, default: null },
     timeslotEnd: { type: String, default: null },
     inventoryDeducted: { type: Boolean, default: false },
-    upiTransactionId: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     orderId: { type: String },
