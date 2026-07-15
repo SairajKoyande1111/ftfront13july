@@ -487,6 +487,7 @@ export default function Home() {
 
           // "products" type section
           const sectionProducts = getSectionProducts(section.id);
+          const isAllProducts = section.title.trim().toUpperCase() === "ALL PRODUCTS";
           return (
             <section key={section.id} className="mb-7">
               <div className="flex items-center justify-between mb-3">
@@ -494,21 +495,38 @@ export default function Home() {
                   {section.title}
                 </h2>
               </div>
-              <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
-                {isLoading
-                  ? [1,2,3,4,5,6].map(i => <Skeleton key={i} className="min-w-[240px] sm:min-w-[280px] h-[340px] sm:h-[380px] rounded-3xl" />)
-                  : sectionProducts.length > 0
-                    ? sectionProducts.map(product => (
-                        <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
-                          <ProductCard product={product} />
-                        </div>
-                      ))
-                    : (
-                        <p className="text-sm text-muted-foreground py-4">No products in this section yet.</p>
-                      )
-                }
-              </DragScrollDiv>
-              {sectionProducts.length > 0 && <SwipeHint />}
+              {isAllProducts ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {isLoading
+                    ? [1,2,3,4,5,6,7,8].map(i => <Skeleton key={i} className="aspect-[3/4] rounded-3xl" />)
+                    : sectionProducts.length > 0
+                      ? sectionProducts.map(product => (
+                          <ProductCard key={product.id} product={product} />
+                        ))
+                      : (
+                          <p className="text-sm text-muted-foreground py-4 col-span-2 lg:col-span-4">No products in this section yet.</p>
+                        )
+                  }
+                </div>
+              ) : (
+                <>
+                  <DragScrollDiv className="flex overflow-x-auto gap-4 sm:gap-6 scrollbar-hide">
+                    {isLoading
+                      ? [1,2,3,4,5,6].map(i => <Skeleton key={i} className="min-w-[240px] sm:min-w-[280px] h-[340px] sm:h-[380px] rounded-3xl" />)
+                      : sectionProducts.length > 0
+                        ? sectionProducts.map(product => (
+                            <div key={product.id} className="w-[240px] sm:w-[280px] flex-none">
+                              <ProductCard product={product} />
+                            </div>
+                          ))
+                        : (
+                            <p className="text-sm text-muted-foreground py-4">No products in this section yet.</p>
+                          )
+                    }
+                  </DragScrollDiv>
+                  {sectionProducts.length > 0 && <SwipeHint />}
+                </>
+              )}
             </section>
           );
         })}
