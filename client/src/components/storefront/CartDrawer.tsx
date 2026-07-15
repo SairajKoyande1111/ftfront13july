@@ -1779,23 +1779,16 @@ export function CartDrawer() {
                         Payment Method
                       </h3>
                       <div className="space-y-2">
-                        {[
-                          { value: "online", label: "UPI" },
-                          { value: "cod", label: "Cash on Delivery" },
-                        ].map(opt => (
-                          <button
-                            key={opt.value}
+                        <button
                             type="button"
-                            onClick={() => setPaymentMethod(opt.value as "cod" | "online")}
-                            className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-left ${paymentMethod === opt.value ? "border-primary bg-primary/5" : "border-border/40 bg-white hover:border-primary/30"}`}
-                            data-testid={`payment-${opt.value}`}
+                            className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-primary bg-primary/5 transition-all text-left"
+                            data-testid="payment-online"
                           >
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${paymentMethod === opt.value ? "border-primary" : "border-slate-300"}`}>
-                              {paymentMethod === opt.value && <div className="w-2 h-2 rounded-full bg-primary" />}
+                            <div className="w-4 h-4 rounded-full border-2 border-primary flex items-center justify-center flex-shrink-0">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
                             </div>
-                            <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                            <span className="text-sm font-medium text-foreground">UPI</span>
                           </button>
-                        ))}
                       </div>
                     </div>
                     )}
