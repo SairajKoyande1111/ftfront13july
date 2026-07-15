@@ -123,12 +123,13 @@ export default function Home() {
       )
     : [];
 
-  const getSectionProducts = (sectionId: string) => {
-    return products?.filter(p => {
+  const getSectionProducts = (sectionId: string, unlimited = false) => {
+    const filtered = products?.filter(p => {
       if (p.isArchived) return false;
       if (Array.isArray(p.sectionId)) return p.sectionId.includes(sectionId);
       return p.sectionId === sectionId;
-    }).slice(0, 10) || [];
+    }) || [];
+    return unlimited ? filtered : filtered.slice(0, 10);
   };
 
   const handleLogoClick = () => {
@@ -486,8 +487,8 @@ export default function Home() {
           }
 
           // "products" type section
-          const sectionProducts = getSectionProducts(section.id);
           const isAllProducts = section.title.trim().toUpperCase() === "ALL PRODUCTS";
+          const sectionProducts = getSectionProducts(section.id, isAllProducts);
           return (
             <section key={section.id} className="mb-7">
               <div className="flex items-center justify-between mb-3">
